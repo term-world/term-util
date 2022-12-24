@@ -2,6 +2,8 @@ import os
 import sys
 import json
 import argparse
+import importlib
+import shutil
 
 from rich.table import Table
 from rich.console import Console
@@ -32,6 +34,7 @@ class Acquire:
     import importlib
 
     def __init__(self, filename, quantity: int = 1):
+        print(importlib)
         self.filename = filename
         if quantity == "":
             quantity = 1
@@ -44,15 +47,16 @@ class Acquire:
         self.box = "BoxSpec" in dir(item)
 
     def validate(self):
-        import importlib
         try:
             self.name, self.ext = self.filename.split(".")
             if not self.ext == "py":
                 raise
+            print(importlib)
             obj = importlib.import_module(self.name)
             getattr(obj, self.name)().use
             self.is_box(obj)
         except Exception as e:
+            print(e)
             print("Not a valid item file")
             exit()
 
@@ -67,14 +71,14 @@ class Acquire:
         except Exception as e:
             print(f"Couldn't acquire {self.name}")
             exit()
-            
+
     def add(self):
         item = self.filename.replace(".py", "")
-        
+
         item_volume = list.determine_consumable(item).VOLUME * self.quantity
-        
-#         item_volume = getattr(self.filename, item)()
-        
+
+        # item_volume = getattr(self.filename, item)()
+
         current_volume = list.total_volume() + item_volume
         if MAX_VOLUME >= current_volume:
             try:
@@ -89,7 +93,7 @@ class Acquire:
 class List:
 
     # File operations
-    
+
     def __init__(self):
         self.inventory = {}
         self.path = os.path.expanduser(f'{Config.values["INV_PATH"]}')
@@ -116,18 +120,16 @@ class List:
         return json.dumps(self.inventory)
 
     # Add/remove items
-    
+
     def total_volume(self):
-        
+
         total_volume = 0
         for item in self.inventory:
             if os.path.exists(f"{self.path}/{item}.py"): 
                 total_volume += int(self.inventory[item]["volume"]) * int(self.inventory[item]["quantity"])
         return total_volume
-        
 
     def add(self, item: str, number: int = 1) -> None:
-        
         if item in self.inventory:
             self.inventory[item]["quantity"] += number
             # self.inventory[item]["volume"] += volume
@@ -155,7 +157,7 @@ class List:
             del self.inventory[item]
 
     # Completely removes all items in .inv not listed in the .registry file       
-            
+
     def nukeItems(self) -> None:
         tempdict = {}
         path = os.path.expanduser("~/.inv/")
@@ -178,7 +180,7 @@ class List:
         table.add_column("Item file")
         table.add_column("Consumable")
         table.add_column("Volume")
-        
+
         for item in self.inventory:
             table.add_row(
                 item,
@@ -193,10 +195,10 @@ class List:
         console.print(table)
         print(f"Your current total volume limit is: {self.total_volume()}/{MAX_VOLUME}\n")
     # Returns a boolean whether the item object is a consumable
-    
+
     def determine_consumable(self, item: str) -> list:
-    
-        from importlib import import_module   
+
+        from importlib import import_module
         try:
             item_file = import_module(f"{item}")
         except ModuleNotFoundError:

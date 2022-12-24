@@ -1,3 +1,0 @@
-Click==7.0
-Creator==0.0.1
-requests==2.28.0
