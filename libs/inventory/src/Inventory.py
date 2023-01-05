@@ -255,7 +255,8 @@ class Items:
         except ValueError:
             quantity = 1
         try:
-            Factory(item, template = f"{item}.py")
+            for _ in range(quantity - 1):
+                Factory(item, template = f"{item}.py")
             list.add(item, 0 - int(quantity))
         except:
             pass
