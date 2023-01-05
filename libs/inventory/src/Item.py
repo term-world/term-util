@@ -77,12 +77,14 @@ class Factory:
         self.name = self.clean(name)
         self.template = self.load_template(template)
         self.item_type = FixtureSpec if fixture else ItemSpec
+
         # Load source locally, and handle based on template contents
         source = inspect.getsource(self.template)
         item_import = ""
         if not "from inventory.Item import" in source:
             item_import = f"from inventory.Item import {self.item_type.__name__}"
         # Based on the above, assemble the source
+        
         self.file = '\n\n'.join([
             item_import,
             source
@@ -131,18 +133,15 @@ class Factory:
             self.file,
             1
         )
-        """
-        self.file = self.file.replace(
-            self.template.__name__,
-            f"{final_name}({self.item_type.__name__})"
-        )
-        """
         if self.item_type == FixtureSpec:
             self.file = self.file.replace(
                 "__file__",
                 ""
             )
-        filepath = os.path.join(self.path, f"{final_name}.py")
+        filepath = os.path.join(
+            self.path, 
+            f"{final_name}.py"
+        )
         with open(filepath, "w") as fh:
             fh.write(self.file)
 
