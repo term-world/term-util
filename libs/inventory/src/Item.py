@@ -2,7 +2,11 @@ import os
 import re
 import sys
 import gitit
+import string
 import inspect
+
+from glob import glob
+from importlib import util
 
 from .Config import *
 from .Template import Template
@@ -34,7 +38,7 @@ class ItemSpec:
 
     def use(self, **kwargs) -> None:
         print(f"You try the {self.__module__}, but it doesn't do anything.")
-        if ItemSpec.consumable:
+        if self.consumable:
             os.remove(
                 self.file
             )
@@ -67,28 +71,78 @@ class BoxSpec(ItemSpec):
 
 class Factory:
 
-    def __init__(self, name, path: str = "", fixture: bool = False, **kwargs):
-        self.name = name.title().replace(" ","")
+    def __init__(self, name, path: str = "", fixture: bool = False, template: str = "", **kwargs):
+        """ Creates items from templates """
         self.path = path
+        self.name = self.clean(name)
+        self.template = self.load_template(template)
         self.item_type = FixtureSpec if fixture else ItemSpec
+        # Load source locally, and handle based on template contents
+        source = inspect.getsource(self.template)
+        item_import = ""
+        if not "from inventory.Item import" in source:
+            item_import = f"from inventory.Item import {self.item_type.__name__}"
+        # Based on the above, assemble the source
         self.file = '\n\n'.join([
-            f"from inventory.Item import {self.item_type.__name__}",
-            inspect.getsource(Template)
+            item_import,
+            source
         ])
         self.props = kwargs
         self.make()
 
-    def make(self):
-        self.file = self.file.replace(
-            "Template",
-            f"{self.name}({self.item_type.__name__})"
+    def load_template(self, template: str = ""):
+        if not template:
+            return Template
+        template = template.split(".py")[0]
+        inv_path = os.path.expanduser(
+            Config.values["INV_PATH"]
         )
+        spec = util.spec_from_file_location(
+            template,
+            f"{inv_path}/{template}.py"
+        )
+        mod = util.module_from_spec(spec)
+        return mod
+
+    def clean(self, filename: str = "") -> str:
+      punc = ''.join(
+        [ch for ch in string.punctuation if not ch == "_"] + [" "]
+      )
+      return ''.join(
+        [ch for ch in filename if ch not in punc]
+      )
+    
+    @staticmethod
+    def rename(filename: str = "", count: int = 0) -> str:
+        files = glob("*.py")
+        names = [name.split(".py")[0] for name in files]
+        temp_name = filename
+        while temp_name in names:
+            if count > 0:
+                temp_name = f"{filename}{count}"
+            count += 1
+        return temp_name
+
+    def make(self):
+        final_name = self.rename(self.name)
+        self.file = re.sub(
+            f"{self.template.__name__}\(.*\)",
+            f"{final_name}({self.item_type.__name__})",
+            self.file,
+            1
+        )
+        """
+        self.file = self.file.replace(
+            self.template.__name__,
+            f"{final_name}({self.item_type.__name__})"
+        )
+        """
         if self.item_type == FixtureSpec:
             self.file = self.file.replace(
                 "__file__",
                 ""
             )
-        filepath = os.path.join(self.path, f"{self.name}.py")
+        filepath = os.path.join(self.path, f"{final_name}.py")
         with open(filepath, "w") as fh:
             fh.write(self.file)
 
