@@ -254,13 +254,11 @@ class Items:
             return
         except ValueError:
             quantity = 1
-        Factory(item, template = f"{item}.py")
-        """
         try:
+            Factory(item, template = f"{item}.py")
             list.add(item, 0 - int(quantity))
         except:
             pass
-        """
 
 
     def use(self, item: str):
