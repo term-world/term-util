@@ -1,5 +1,5 @@
 class Config:
 
   values = {
-    "URL": "https://raw.githubusercontent.com/term-world/world-additions/main/"
+    "URL": "https://cdn.githubraw.com/term-world/world-additions/main/"
   }
