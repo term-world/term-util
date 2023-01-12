@@ -84,7 +84,7 @@ class Factory:
         if not "from inventory.Item import" in source:
             item_import = f"from inventory.Item import {self.item_type.__name__}"
         # Based on the above, assemble the source
-        
+
         self.file = '\n\n'.join([
             item_import,
             source
@@ -113,7 +113,7 @@ class Factory:
       return ''.join(
         [ch for ch in filename if ch not in punc]
       )
-    
+
     @staticmethod
     def rename(filename: str = "", count: int = 0) -> str:
         files = glob("*.py")
@@ -128,7 +128,7 @@ class Factory:
     def make(self):
         final_name = self.rename(self.name)
         self.file = re.sub(
-            f"{self.template.__name__}\(.*\)",
+            f"{self.template.__name__}",
             f"{final_name}({self.item_type.__name__})",
             self.file,
             1
@@ -139,7 +139,7 @@ class Factory:
                 ""
             )
         filepath = os.path.join(
-            self.path, 
+            self.path,
             f"{final_name}.py"
         )
         with open(filepath, "w") as fh:
