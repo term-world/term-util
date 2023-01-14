@@ -34,6 +34,7 @@ class Acquire:
 
     def __init__(self, filename, quantity: int = 1):
         self.filename = filename
+        self.item = filename
         if quantity == "":
             quantity = 1
         self.quantity = int(quantity)
@@ -52,10 +53,12 @@ class Acquire:
             if not self.ext == "py":
                 raise
             obj = importlib.import_module(self.name)
-            self.name = re.search(r"[a-zA-Z]+", self.name).group(0)
-            self.filename = f"{self.name}.{self.ext}"
             getattr(obj, self.name)().use
             self.is_box(obj)
+            # Reset the filename without appended digits if a
+            # multiple/copy from drop
+            self.name = re.search(r"[a-zA-Z]+", self.name).group(0)
+            self.filename = f"{self.name}.{self.ext}"
         except Exception as e:
             print("Not a valid item file")
             exit()
@@ -67,18 +70,22 @@ class Acquire:
                 f'{Config.values["INV_PATH"]}/{self.filename}'
             )
             if not self.box:
-                shutil.copy(self.filename, path)
+                try:
+                    shutil.copy(self.filename, path)
+                except:
+                    # This operation attempts to move the file
+                    # based on real file name; however, if this
+                    # fails it might be OK
+                    pass
+                os.remove(self.item)
         except Exception as e:
             print(f"Couldn't acquire {self.name}")
             exit()
 
     def add(self):
         item = self.filename.replace(".py", "")
-
         item_volume = list.is_consumable(item).VOLUME * self.quantity
-
         current_volume = list.total_volume() + item_volume
-
         if MAX_VOLUME >= current_volume:
             try:
                 list.add(self.name, self.quantity)
@@ -261,12 +268,11 @@ class Items:
         except ValueError:
             quantity = 1
         try:
-            for _ in range(quantity - 1):
-                Factory(item, template = f"{item}.py")
+            for _ in range(quantity):
+                Factory(item)
             list.add(item, 0 - int(quantity))
         except:
             pass
-
 
     def use(self, item: str):
 
