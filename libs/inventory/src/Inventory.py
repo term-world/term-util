@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import json
 import argparse
@@ -44,16 +45,21 @@ class Acquire:
         self.box = "BoxSpec" in dir(item)
 
     def validate(self):
+        # Check to see if the item is usable and
+        # remove extra numbering from the filename
         try:
             self.name, self.ext = self.filename.split(".")
             if not self.ext == "py":
                 raise
             obj = importlib.import_module(self.name)
+            self.name = re.search(r"[a-zA-Z]+", self.name).group(0)
+            self.filename = f"{self.name}.{self.ext}"
             getattr(obj, self.name)().use
             self.is_box(obj)
         except Exception as e:
             print("Not a valid item file")
             exit()
+
 
     def move(self):
         try:
