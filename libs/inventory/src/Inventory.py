@@ -63,7 +63,6 @@ class Acquire:
             print("Not a valid item file")
             exit()
 
-
     def move(self):
         try:
             path = os.path.expanduser(
@@ -77,7 +76,10 @@ class Acquire:
                     # based on real file name; however, if this
                     # fails it might be OK
                     pass
-                os.remove(self.item)
+                obj = importlib.import_module(self.name)
+                if "ItemSpec" in dir(obj):
+                    # Remove only the physically present copy
+                    os.remove(f"./{self.item}")
         except Exception as e:
             print(f"Couldn't acquire {self.name}")
             exit()
@@ -214,12 +216,12 @@ class List:
         try:
             item_file = importlib.import_module(f"{item}")
         except ModuleNotFoundError:
-            return
+            exit()
         try:
             instance = getattr(item_file, item)()
         except:
             print(f"{item} doesn't seem to be a valid object.")
-            return
+            exit()
         return instance
 
 class Items:
@@ -243,8 +245,6 @@ class Items:
                 return True
         return False
 
-    # 
-
     def trash(self, item: str, quantity: int = 1) -> None:
         """ Removes item from the list; tied to the "remove" .bashrc alias """
         try:
@@ -264,7 +264,7 @@ class Items:
             quantity = int(quantity)
         except OutOfError:
             print(f"It doesn't look like you have any {item}.")
-            return
+            exit()
         except ValueError:
             quantity = 1
         try:
@@ -285,13 +285,14 @@ class Items:
             item_file = importlib.import_module(f"{item}")
         except ModuleNotFoundError:
             print(f"You don't seem to have any {item}.")
+            exit()
 
         # Reflect the class
         try:
             instance = getattr(item_file, item)()
         except:
             print(f"{item} doesn't seem to be a valid object.")
-            return
+            exit()
 
         # Test type of item; remove if ItemSpec
         try:
@@ -303,21 +304,13 @@ class Items:
             
             # Only decrease quantity if item is consumable
             if instance.consumable:
-                list.add(item, -1)
+                list.remove(item)
             if number <= 0:
                 raise OutOfError(item)
         except (KeyError, OutOfError) as e:
             print(f"You have no {item} remaining!")
-            return
+            exit()
         except IsFixture: pass
-
-        # To remove or not to remove; that is the question
-
-        # Allows multiple uses of items owned in multiple
-        if instance.consumable and number <= 0:
-            try:
-                list.remove(item)
-            except: pass
 
         # Return the result or inbuilt use method
         if type(instance).__str__ is not object.__str__:

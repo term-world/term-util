@@ -38,10 +38,10 @@ class ItemSpec:
 
     def use(self, **kwargs) -> None:
         print(f"You try the {self.__module__}, but it doesn't do anything.")
-        if self.consumable:
-            os.remove(
-                self.file
-            )
+        #if self.consumable:
+        #    os.remove(
+        #        self.file
+        #    )
 
 class FixtureSpec(ItemSpec):
 
