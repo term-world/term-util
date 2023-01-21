@@ -1,7 +1,7 @@
 # System libraries
 import os
 import sys
-import arglite
+from arglite import parser as cliarg
 from glob import glob
 
 # term-world libraries
