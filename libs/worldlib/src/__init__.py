@@ -1,15 +1,16 @@
 # System libraries
 import os
-import narrator
+import sys
 from glob import glob
 
 # term-world libraries
+import narrator
 import inventory
 from narrator.Checkpoint import check_flag
 from narrator.Checkpoint import set_flag
-from inventory.Item import FixtureSpec
-from inventory.Item import ItemSpec
 from inventory.Item import BoxSpec
+from inventory.Item import ItemSpec
+from inventory.Item import FixtureSpec
 
 # term-world objects
 try:
