@@ -15,4 +15,6 @@ from inventory.Item import BoxSpec
 try:
     n = narrator.Narrator()
 except Exception as e:
-    print(e)
+    # This exception occurs when invoking the narrator
+    # in a folder where .paths.yml doesn't exist
+    pass
