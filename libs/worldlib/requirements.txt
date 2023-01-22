@@ -1,3 +1,2 @@
-arglite==0.4.1
 inventory==0.1
 narrator==0.1
