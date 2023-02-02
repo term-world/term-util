@@ -185,7 +185,7 @@ class List:
     def display(self):
         table = Table(title=f"{os.getenv('LOGNAME')}'s inventory")
         # Write latest inventory ahead of printing table
-        self.write() 
+        self.write()
         # Remove all entries without corresponding files
         self.cleanup_items()
         table.add_column("Item name")
@@ -261,7 +261,13 @@ class Items:
         try:
             if not item in self.list:
                 raise OutOfError(item)
+            # Convert the quantity to an integer if not already one
             quantity = int(quantity)
+            # Test if the number being dropped is more than we have
+            # and limit the drops to only the quantity that we actually
+            # can drop
+            if quantity > self.list[item]["quantity"]:
+                quantity = self.list[item]["quantity"]
         except OutOfError:
             print(f"It doesn't look like you have any {item}.")
             exit()
