@@ -1,20 +1,28 @@
 import os
-import re
-import json
-import requests
+
+from .request import Request
 
 class Connection:
 
-    CONFIG = {
-        "DB_HOST": os.getenv("DB_HOST"),
-        "DB_USER": os.getenv("DB_USER"),
-        "DB_PASS": os.getenv("DB_PASS")
+    DB = {
+        "HOST": os.getenv("DB_HOST"),
+        "USER": os.getenv("DB_USER"),
+        "PASS": os.getenv("DB_PASS")
     }
 
     HEADERS = {
         'accept': 'application/json',
         'content-type': 'application/json',
-        'referer': f'https://{CONFIG["DB_HOST"]}'
+        'referer': f'https://{DB["HOST"]}'
     }
 
-    AUTH_STRING = f'{CONFIG["DB_USER"]}:{CONFIG["DB_PASS"]}@{CONFIG["DB_HOST"]}'
+    def __init__(self, db_name: str = ""):
+        try:
+            db_name = str(db_name)
+            if not db_name:
+                raise
+        except:
+            print("Couchsurf: Invalid or empty database name in connection.")
+            return
+        self.DB["NAME"] = db_name
+        self.request = Request(self.DB, self.HEADERS)

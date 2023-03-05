@@ -1,31 +1,30 @@
 import json
 import requests
 
-from .connection import *
-
 class Request:
 
-    def __init__(self, connection: Connection = Connection()):
-        self.host = connection.CONFIG["DB_HOST"]
-        self.user = connection.CONFIG["DB_USER"]
-        self.passwd = connection.CONFIG["DB_PASS"]
-        self.headers = connection.HEADERS
+    def __init__(self, config: dict = {}, headers: dict = {}):
+        self.host = config["HOST"]
+        self.user = config["USER"]
+        self.passwd = config["PASS"]
+        self.name = config["NAME"]
         self.auth = f"{self.user}:{self.passwd}@{self.host}"
+        self.headers = headers
 
-    def get(self, db_name: str = "", view_path: str = "", **kwargs) -> dict:
+    def get(self, view_path: str = "", **kwargs) -> dict:
         params = None
         if kwargs:
             params = {
                 "keys": json.dumps([value for value in kwargs.values()])
             }
         response = requests.get(
-            f'http://{self.auth}/{db_name}/_design/latest/_view/{view_path}',
+            f'http://{self.auth}/{self.name}/_design/latest/_view/{view_path}',
             headers = self.headers,
             params = params
         )
         return json.loads(response.text)
 
-    def query(self, **kwargs):
+    def query(self, **kwargs) -> dict:
         """
             Example:
             couchsurf.query_request(
@@ -52,20 +51,21 @@ class Request:
         result = __post(query, "_find")
         return result
 
-    def __post(self, doc: str = "", op: str =""):
+    def __post(self, doc: str = "", op: str = "") -> dict:
         response = requests.post(
-            f'https://{self.auth}/{op}',
+            f'https://{self.auth}/{self.name}/{op}',
             headers=self.headers,
             data=json.dumps(doc)
         )
         confirmation = json.loads(response.text)
         return confirmation
 
-    def __put(self,doc_id: str = "", updated_doc: str = ""):
+    def __put(self, doc_id: str = "", updated_doc: str = "") -> dict:
         response = requests.put(
-            f'https://{self.auth}/{doc_id}',
+            f'https://{self.auth}/{self.name}/{doc_id}',
             headers=self.headers,
             data=json.dumps(updated_doc)
         )
         confirmation = json.loads(response.text)
         return confirmation
+
