@@ -2,6 +2,7 @@ import os
 import couchsurf
 
 from inventory import Acquire
+from .packager import *
 
 class Listing:
 
