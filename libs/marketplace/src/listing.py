@@ -1,17 +1,26 @@
 import os
-import importlib
-import pyminifier
-#import couchsurf
+import couchsurf
 
 from inventory import Acquire
 
 class Listing:
 
+    """ Require:
+        * author
+        * date
+        * version
+        * description
+    """
+
     def __init__(filename: str = ""):
         Acquire.validate(filename)
         self.filename = filename
-        self.codeball = self.minify()
 
-    def minify(self):
-        with open(self.filename, "r") as fh:
-            code = fh.read()
+    def is_complete(self, fields: dict = {}) -> bool:
+        return False
+
+    def build(self) -> dict:
+        pass
+
+    def list(self) -> None:
+        pass
