@@ -51,16 +51,9 @@ class Request:
         result = __post(query, "_find")
         return result
 
-    def __post(self, doc: str = "", op: str = "") -> dict:
-        response = requests.post(
-            f'https://{self.auth}/{self.name}/{op}',
-            headers=self.headers,
-            data=json.dumps(doc)
-        )
-        confirmation = json.loads(response.text)
-        return confirmation
-
-    def __put(self, doc_id: str = "", updated_doc: str = "") -> dict:
+    def put(self, doc_id: str = "", updated_doc: str = "", **kwargs) -> dict:
+        if kwargs:
+            headers.update(kwargs)
         response = requests.put(
             f'https://{self.auth}/{self.name}/{doc_id}',
             headers=self.headers,
@@ -69,3 +62,11 @@ class Request:
         confirmation = json.loads(response.text)
         return confirmation
 
+    def __post(self, doc: str = "", op: str = "") -> dict:
+        response = requests.post(
+            f'https://{self.auth}/{self.name}/{op}',
+            headers=self.headers,
+            data=json.dumps(doc)
+        )
+        confirmation = json.loads(response.text)
+        return confirmation
