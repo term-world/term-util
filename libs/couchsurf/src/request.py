@@ -65,10 +65,13 @@ class Request:
         return result
 
     def put(self, doc_id: str = "", updated_doc: dict = {}, **kwargs) -> dict:
-        if kwargs:
-            headers.update(kwargs)
+        request_uri = f'http://{self.auth}/{self.name}/{doc_id}'
+        if "attachment" in kwargs:
+            request_uri += f'/{kwargs["attachment"]}'
+            with open(kwargs["attachment"], 'r') as fh:
+                updated_doc["_attachments"] = fh.read()
         response = requests.put(
-            f'http://{self.auth}/{self.name}/{doc_id}',
+            request_uri,
             headers=self.headers,
             data=json.dumps(updated_doc)
         )
