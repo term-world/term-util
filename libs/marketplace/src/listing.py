@@ -18,7 +18,8 @@ class Listing:
     """
 
     def __init__(self, files: any = ""):
-        if is_valid(files):
+        if self.is_valid(files):
+            print("[MARKETPLACE] Passed validation...")
             self.author = os.getlogin()
             self.date = datetime.now().timestamp()
             self.name = input("[MARKETPLACE] Name of package to list: ")
@@ -35,16 +36,17 @@ class Listing:
         if os.path.isfile(files):
             files = [files]
         elif os.path.isdir(files):
-            for parent, dirs, files in os.walk(files)
+            for parent, dirs, files in os.walk(files):
                 files = files
         for file in files:
             # TODO: Convert Acquire.validate to bool?
             #       This fixes the issue that only _one_ of the
             #       files has to actually work -- and it tells us
             #       which file to add the code to.
-            pass
+            if Acquire.validate(file):
+                return True
         # TODO: Remains valid for now (for testing)
-        return True
+        return False
 
     def is_version(self) -> str:
         conn = Connection("marketplace")
