@@ -18,6 +18,8 @@ class Request:
             params = {
                 "keys": json.dumps([value for value in kwargs.values()])
             }
+        if not endpoint.startswith("_"):
+            endpoint = f"{self.name}/{endpoint}"
         response = requests.get(
             f'http://{self.auth}/{endpoint}',
             headers = self.headers,
@@ -65,7 +67,7 @@ class Request:
         result = post(query, "_find")
         return result
 
-    def put(self, doc_id: str = "", updated_doc: dict = {}, **kwargs) -> dict:
+    def put(self, doc_id: str = "", doc: dict = {}, **kwargs) -> dict:
         request_uri = f'http://{self.auth}/{self.name}/{doc_id}'
         response = requests.put(
             request_uri,
