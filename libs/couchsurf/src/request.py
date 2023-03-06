@@ -11,7 +11,20 @@ class Request:
         self.auth = f"{self.user}:{self.passwd}@{self.host}"
         self.headers = headers
 
-    def get(self, view_path: str = "", **kwargs) -> dict:
+    def get(self, endpoint: str = "", **kwargs) -> dict:
+        params = None
+        if kwargs:
+            params = {
+                "keys": json.dumps([value for value in kwargs.values()])
+            }
+        response = requests.get(
+            f'http://{self.auth}/{endpoint}',
+            headers = self.headers,
+            params = params
+        )
+        return json.loads(response.text)
+
+    def view(self, view_path: str = "", **kwargs) -> dict:
         params = None
         if kwargs:
             params = {
@@ -48,10 +61,21 @@ class Request:
         query = {
             "selector":kwargs
         }
-        result = __post(query, "_find")
+        result = post(query, "_find")
         return result
 
-    def __post(self, doc: str = "", op: str = "") -> dict:
+    def put(self, doc_id: str = "", updated_doc: dict = {}, **kwargs) -> dict:
+        if kwargs:
+            headers.update(kwargs)
+        response = requests.put(
+            f'http://{self.auth}/{self.name}/{doc_id}',
+            headers=self.headers,
+            data=json.dumps(updated_doc)
+        )
+        confirmation = json.loads(response.text)
+        return confirmation
+
+    def post(self, doc: str = "", op: str = "") -> dict:
         response = requests.post(
             f'https://{self.auth}/{self.name}/{op}',
             headers=self.headers,
@@ -59,13 +83,3 @@ class Request:
         )
         confirmation = json.loads(response.text)
         return confirmation
-
-    def __put(self, doc_id: str = "", updated_doc: str = "") -> dict:
-        response = requests.put(
-            f'https://{self.auth}/{self.name}/{doc_id}',
-            headers=self.headers,
-            data=json.dumps(updated_doc)
-        )
-        confirmation = json.loads(response.text)
-        return confirmation
-
