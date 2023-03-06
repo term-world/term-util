@@ -1,4 +1,5 @@
 import json
+import base64
 import requests
 
 class Request:
@@ -65,14 +66,31 @@ class Request:
         return result
 
     def put(self, doc_id: str = "", updated_doc: dict = {}, **kwargs) -> dict:
-        if kwargs:
-            headers.update(kwargs)
+        request_uri = f'http://{self.auth}/{self.name}/{doc_id}'
         response = requests.put(
-            f'http://{self.auth}/{self.name}/{doc_id}',
-            headers=self.headers,
-            data=json.dumps(updated_doc)
+            request_uri,
+            headers = self.headers,
+            data = json.dumps(updated_doc)
         )
         confirmation = json.loads(response.text)
+        if "attachment" in kwargs:
+            with open(kwargs["attachment"], 'rb') as fh:
+                updated_doc["_attachments"] = {
+                    f'{kwargs["attachment"]}': {
+                        "data": base64.b64encode(
+                            fh.read()
+                        ).decode('utf-8')
+                    }
+                }
+            request_uri += f'/{kwargs["attachment"]}'
+            self.headers["If-Match"] = confirmation["rev"]
+            self.headers["Content-Type"] = "application/zip"
+            response = requests.put(
+                request_uri,
+                headers = self.headers,
+                data = json.dumps(updated_doc["_attachments"][kwargs["attachment"]]["data"])
+            )
+            confirmation = json.loads(response.text)
         return confirmation
 
     def post(self, doc: str = "", op: str = "") -> dict:
