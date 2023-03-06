@@ -48,6 +48,10 @@ class Acquire:
         self.box = "BoxSpec" in dir(item)
 
     def validate(self) -> bool:
+        # TODO: Move validation to the item level?
+        #       I see a distinct issue with attempting to
+        #       import from the file itself, though
+
         # Check to see if the item is usable and
         # remove extra numbering from the filename
         try:
