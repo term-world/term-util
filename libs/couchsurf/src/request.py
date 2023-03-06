@@ -67,7 +67,7 @@ class Request:
         result = post(query, "_find")
         return result
 
-    def put(self, doc_id: str = "", updated_doc: dict = {}, **kwargs) -> dict:
+    def put(self, doc_id: str = "", doc: dict = {}, **kwargs) -> dict:
         request_uri = f'http://{self.auth}/{self.name}/{doc_id}'
         response = requests.put(
             request_uri,
