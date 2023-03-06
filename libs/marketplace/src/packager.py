@@ -35,7 +35,8 @@ class Package:
                 "name": self.name,
                 "target": f"{self.name}.pyz",
                 "compress": True,
-                "main": f"{self.name}:{self.name}"
+                "main": f"{self.name}:{self.name}",
+                "interpreter": "/usr/bin/python"
             }
         if not os.path.isdir(self.name):
             for file in self.files:
@@ -45,7 +46,8 @@ class Package:
             options["name"],
             target = options["target"],
             main = options["main"],
-            compressed = options["compress"]
+            compressed = options["compress"],
+            interpreter = options["interpreter"]
         )
         if not os.path.isdir(self.name):
             shutil.rmtree(self.name)
