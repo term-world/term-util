@@ -10,6 +10,7 @@ from rich.table import Table
 from rich.console import Console
 from collections import namedtuple
 
+# TODO: Add configuration to environment variable stack?
 from .Config import *
 
 from .Item import ItemSpec
@@ -38,14 +39,15 @@ class Acquire:
         if quantity == "":
             quantity = 1
         self.quantity = int(quantity)
-        self.validate()
+        if not self.validate():
+            exit()
         self.move()
         self.add()
 
     def is_box(self, item) -> bool:
         self.box = "BoxSpec" in dir(item)
 
-    def validate(self):
+    def validate(self) -> bool:
         # Check to see if the item is usable and
         # remove extra numbering from the filename
         try:
@@ -61,7 +63,8 @@ class Acquire:
             self.filename = f"{self.name}.{self.ext}"
         except Exception as e:
             print("Not a valid item file")
-            exit()
+            return False
+        return True
 
     def move(self):
         try:
