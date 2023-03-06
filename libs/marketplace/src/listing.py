@@ -2,7 +2,7 @@ import os
 
 from datetime import datetime
 from inventory import Acquire
-from packager import Package
+from .packager import Package
 
 from couchsurf import Connection
 
