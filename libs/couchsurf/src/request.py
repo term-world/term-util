@@ -18,6 +18,8 @@ class Request:
             params = {
                 "keys": json.dumps([value for value in kwargs.values()])
             }
+        if not endpoint.startswith("_"):
+            endpoint = f"{self.name}/{endpoint}"
         response = requests.get(
             f'http://{self.auth}/{endpoint}',
             headers = self.headers,
