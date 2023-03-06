@@ -20,6 +20,8 @@ from .Item import OutOfError
 from .Item import IsFixture
 from .Item import Factory
 
+from .Validation import Validator
+
 PATH = f'{Config.values["INV_PATH"]}/{Config.values["INV_REGISTRY"]}'
 
 sys.path.append(
