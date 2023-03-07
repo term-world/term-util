@@ -67,4 +67,4 @@ class Package:
             print("Checksums unequal! Exiting.")
             exit()
         with open(pack, "wb") as fh:
-            fh.write(base64.b64decode(pack))
+            fh.write(base64.b64decode(data))
