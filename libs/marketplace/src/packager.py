@@ -3,7 +3,7 @@ import base64
 import shutil
 import zipapp
 
-from hashlib import sha256
+from hashlib import md5
 
 class Package:
 
@@ -28,7 +28,7 @@ class Package:
     def entrypoint(self) -> None:
         """ Designates title file as entrypoint """
         with open(f"{self.name}/{self.name}.py", "a") as fh:
-            fh.write(f"""if __name__ == "{self.name}":
+            fh.write(f"""\nif __name__ == "{self.name}":
                 {self.name}().use()""")
 
     def make(self, options: dict = {}) -> None:
@@ -54,3 +54,17 @@ class Package:
         )
         if not os.path.isdir(self.name):
             shutil.rmtree(self.name)
+
+    def unpack(self, md5: str = ""):
+        pack = self.files[0]
+        with open(pack, "rb") as fh:
+            data = fh.read()
+        chex = base64.b64decode(
+            md5.split("md5-")[1]
+        ).hex()
+        if chex != md5(data).hexdigest():
+            # TODO: Implement proper error handling with special exception
+            print("Checksums unequal! Exiting.")
+            exit()
+        with open(pack, "wb") as fh:
+            fh.write(base64.b64decode(pack))
