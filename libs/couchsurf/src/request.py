@@ -64,7 +64,7 @@ class Request:
         query = {
             "selector":kwargs
         }
-        result = post(query, "_find")
+        result = self.post(query, "_find")
         return result
 
     def put(self, doc_id: str = "", doc: dict = {}, **kwargs) -> dict:
@@ -97,7 +97,7 @@ class Request:
 
     def post(self, doc: str = "", op: str = "") -> dict:
         response = requests.post(
-            f'https://{self.auth}/{self.name}/{op}',
+            f'http://{self.auth}/{self.name}/{op}',
             headers=self.headers,
             data=json.dumps(doc)
         )
