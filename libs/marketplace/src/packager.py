@@ -1,6 +1,9 @@
 import os
+import base64
 import shutil
 import zipapp
+
+from hashlib import sha256
 
 class Package:
 
@@ -28,7 +31,14 @@ class Package:
             fh.write(f"""if __name__ == "{self.name}":
                 {self.name}().use()""")
 
-    def make(self, options: dict = {}) -> None:
+    def checksum(self) -> str:
+        with open(f"{self.name}.pyz", "rb") as fh:
+            data = base64.b64encode(
+                fh.read()
+            )
+        return sha256(data).hexdigest()
+
+    def make(self, options: dict = {}) -> str:
         """ Makes *.pyz file for object """
         if not options:
             options = {
@@ -51,3 +61,4 @@ class Package:
         )
         if not os.path.isdir(self.name):
             shutil.rmtree(self.name)
+        return self.checksum()
