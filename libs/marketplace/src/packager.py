@@ -64,6 +64,7 @@ class Package:
             md5.split("md5-")[1]
         ).hex()
         if chex != md5(data).hexdigest():
+            # TODO: Potentially delete the file? It's a bad actor somehow
             # TODO: Implement proper error handling with special exception
             print("Checksums unequal! Exiting.")
             exit()
@@ -75,7 +76,8 @@ class Package:
         conn = Connection("marketplace")
         # TODO: Determine whether or not we need to get the attachment
         #       md5 here, too -- seems...wasteful?
-        db_check = conn.request.get(doc_id)["_attachments"]["digest"]
+        db_check = conn.request.get(doc_id)["_attachments"][{self.name}]["digest"]
         b64bin = conn.request.get(f"{doc_id}/{self.name}.pyz")
         with open(f"{self.name}.pyz", "wb") as fh:
             fh.write(b64bin)
+        self.unpack(db_check)
