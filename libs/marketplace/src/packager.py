@@ -73,5 +73,9 @@ class Package:
     def retrieve(self, doc_id: str = "") -> None:
         pack = self.files[0]
         conn = Connection("marketplace")
+        # TODO: Determine whether or not we need to get the attachment
+        #       md5 here, too -- seems...wasteful?
+        db_check = conn.request.get(doc_id)["_attachments"]["digest"]
         b64bin = conn.request.get(f"{doc_id}/{self.name}.pyz")
-        print(b64bin)
+        with open(f"{self.name}.pyz", "wb") as fh:
+            fh.write(b64bin)
