@@ -80,6 +80,6 @@ class Package:
         #       md5 here, too -- seems...wasteful?
         db_check = conn.request.get(doc_id)["_attachments"][self.pkgfile]["digest"]
         b64bin = conn.request.get(f"{doc_id}/{self.pkgfile}")
-        with open(f"{self.name}.pyz", "wb") as fh:
+        with open(f"{self.name}.pyz", "w") as fh:
             fh.write(b64bin)
         self.unpack(db_check)
