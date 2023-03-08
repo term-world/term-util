@@ -57,13 +57,13 @@ class Package:
         if not os.path.isdir(self.name):
             shutil.rmtree(self.name)
 
-    def unpack(self, md5: str = ""):
+    def unpack(self, checksum: str = ""):
         # TODO: What happens if no file shows up? ERR!
         pack = self.pkgfile
         with open(pack, "rb") as fh:
             data = fh.read()
         chex = base64.b64decode(
-            md5.split("md5-")[1]
+            checksum.split("md5-")[1]
         ).hex()
         if chex != md5(data).hexdigest():
             # TODO: Potentially delete the file? It's a bad actor somehow
