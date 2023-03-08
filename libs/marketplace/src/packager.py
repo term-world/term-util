@@ -14,6 +14,7 @@ class Package:
         if type(files) == str:
             self.files = [files]
         self.name = name
+        self.pkgfile = f"{self.name}.pyz"
 
     def folder(self, file: str = "") -> None:
         """ Add all files to folder """
@@ -57,7 +58,8 @@ class Package:
             shutil.rmtree(self.name)
 
     def unpack(self, md5: str = ""):
-        pack = self.files[0]
+        # TODO: What happens if no file shows up? ERR!
+        pack = self.pkgfile
         with open(pack, "rb") as fh:
             data = fh.read()
         chex = base64.b64decode(
@@ -76,8 +78,8 @@ class Package:
         conn = Connection("marketplace")
         # TODO: Determine whether or not we need to get the attachment
         #       md5 here, too -- seems...wasteful?
-        db_check = conn.request.get(doc_id)["_attachments"][self.name]["digest"]
-        b64bin = conn.request.get(f"{doc_id}/{self.name}.pyz")
+        db_check = conn.request.get(doc_id)["_attachments"][self.pkgfile]["digest"]
+        b64bin = conn.request.get(f"{doc_id}/{self.pkgfile}")
         with open(f"{self.name}.pyz", "wb") as fh:
             fh.write(b64bin)
         self.unpack(db_check)
