@@ -4,6 +4,7 @@ import shutil
 import zipapp
 
 from hashlib import md5
+from couchsurf import Connection
 
 class Package:
 
@@ -68,3 +69,9 @@ class Package:
             exit()
         with open(pack, "wb") as fh:
             fh.write(base64.b64decode(data))
+
+    def retrieve(self, doc_id: str = "") -> None:
+        pack = self.files[0]
+        conn = Connection("marketplace")
+        b64bin = conn.request.get(f"{doc_id}/{self.name}.pyz")
+        print(b64bin)
