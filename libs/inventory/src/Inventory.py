@@ -41,15 +41,23 @@ class Acquire:
         if quantity == "":
             quantity = 1
         self.quantity = int(quantity)
-        if not self.validate():
+        if not Validator.validate(filename):
             exit()
+        self.locate(filename)
         self.move()
         self.add()
 
     def is_box(self, item) -> bool:
         self.box = "BoxSpec" in dir(item)
 
+    def locate(self, filename: str = "") -> None:
+        self.name, self.ext = self.filename.split("/")[-1].split(".")
+        self.name = re.search(r"[a-zA-Z]+", self.name).group(0)
+        self.box = Validator.is_box(self.name)
+        self.filename = f"{self.name}.{self.ext}"
+
     def validate(self) -> bool:
+        """ DEPRECATED: Use Validator module """
         # TODO: Move validation to the item level?
         #       I see a distinct issue with attempting to
         #       import from the file itself, though
@@ -65,8 +73,6 @@ class Acquire:
             self.is_box(obj)
             # Reset the filename without appended digits if a
             # multiple/copy from drop
-            self.name = re.search(r"[a-zA-Z]+", self.name).group(0)
-            self.filename = f"{self.name}.{self.ext}"
         except Exception as e:
             print("Not a valid item file")
             return False
@@ -316,7 +322,7 @@ class Items:
             number = self.list[item]["quantity"]
 #             if fixture or box:
 #                 raise IsFixture(item)
-            
+
             # Only decrease quantity if item is consumable
             if instance.consumable:
                 list.remove(item)
