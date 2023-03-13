@@ -54,9 +54,11 @@ class Listing:
 
     def pack(self):
         pass
-        #package = Package(
-        #    name = self.name,
-        #    files = f"{self.name}.{self.ext}"
+        """
+            To create a pyz package:
+                * pack = Package(name = "NAME_OF_CLASS", files="FILES_TO_ADD")
+                * pack.make()
+        """
 
     def build(self) -> dict:
         print(self.serialize())
