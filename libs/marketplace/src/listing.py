@@ -1,12 +1,11 @@
 import os
+import importlib
 
 from datetime import datetime
-from inventory import Acquire
+from inventory import Validator
 from .packager import Package
 
 from couchsurf import Connection
-
-import os
 
 class Listing:
 
@@ -22,14 +21,15 @@ class Listing:
             print("[MARKETPLACE] Passed validation...")
             self.author = os.getlogin()
             self.date = datetime.now().timestamp()
-            self.name = input("[MARKETPLACE] Name of package to list: ")
+            self.name = str(input("[MARKETPLACE] Name of package to list: "))
 
     def serialize(self) -> dict:
+        obj = importlib.import_module(self.name)
         return {
             "Author": self.author,
             "Date": self.date,
             "Version": "v0.1.0",
-            "Description": "Get this from a docstring?"
+            "Description": getattr(obj, self.name)().use.__doc__
         }
 
     def is_valid(self, files: any = "") -> bool:
@@ -43,7 +43,7 @@ class Listing:
             #       This fixes the issue that only _one_ of the
             #       files has to actually work -- and it tells us
             #       which file to add the code to.
-            if Acquire.validate(file):
+            if Validator.validate(file):
                 return True
         # TODO: Remains valid for now (for testing)
         return False
@@ -54,6 +54,7 @@ class Listing:
 
     def pack(self):
         pass
+
         """
             To create a pyz package:
                 * pack = Package(name = "NAME_OF_CLASS", files="FILES_TO_ADD")
