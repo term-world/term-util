@@ -1,31 +1,46 @@
 import json
+import base64
 import requests
-
-from .connection import *
 
 class Request:
 
-    def __init__(self, connection: Connection = Connection()):
-        self.host = connection.CONFIG["DB_HOST"]
-        self.user = connection.CONFIG["DB_USER"]
-        self.passwd = connection.CONFIG["DB_PASS"]
-        self.headers = connection.HEADERS
+    def __init__(self, config: dict = {}, headers: dict = {}):
+        self.host = config["HOST"]
+        self.user = config["USER"]
+        self.passwd = config["PASS"]
+        self.name = config["NAME"]
         self.auth = f"{self.user}:{self.passwd}@{self.host}"
+        self.headers = headers
 
-    def get(self, db_name: str = "", view_path: str = "", **kwargs) -> dict:
+    def get(self, endpoint: str = "", **kwargs) -> dict:
+        params = None
+        if kwargs:
+            params = {
+                "keys": json.dumps([value for value in kwargs.values()])
+            }
+        if not endpoint.startswith("_"):
+            endpoint = f"{self.name}/{endpoint}"
+        response = requests.get(
+            f'http://{self.auth}/{endpoint}',
+            headers = self.headers,
+            params = params
+        )
+        return json.loads(response.text)
+
+    def view(self, view_path: str = "", **kwargs) -> dict:
         params = None
         if kwargs:
             params = {
                 "keys": json.dumps([value for value in kwargs.values()])
             }
         response = requests.get(
-            f'http://{self.auth}/{db_name}/_design/latest/_view/{view_path}',
+            f'http://{self.auth}/{self.name}/_design/latest/_view/{view_path}',
             headers = self.headers,
             params = params
         )
         return json.loads(response.text)
 
-    def query(self, **kwargs):
+    def query(self, **kwargs) -> dict:
         """
             Example:
             couchsurf.query_request(
@@ -49,23 +64,42 @@ class Request:
         query = {
             "selector":kwargs
         }
-        result = __post(query, "_find")
+        result = self.post(query, "_find")
         return result
 
-    def __post(self, doc: str = "", op: str =""):
-        response = requests.post(
-            f'https://{self.auth}/{op}',
-            headers=self.headers,
-            data=json.dumps(doc)
+    def put(self, doc_id: str = "", doc: dict = {}, **kwargs) -> dict:
+        request_uri = f'http://{self.auth}/{self.name}/{doc_id}'
+        response = requests.put(
+            request_uri,
+            headers = self.headers,
+            data = json.dumps(updated_doc)
         )
         confirmation = json.loads(response.text)
+        if "attachment" in kwargs:
+            with open(kwargs["attachment"], 'rb') as fh:
+                updated_doc["_attachments"] = {
+                    f'{kwargs["attachment"]}': {
+                        "data": base64.b64encode(
+                            fh.read()
+                        ).decode('utf-8')
+                    }
+                }
+            request_uri += f'/{kwargs["attachment"]}'
+            self.headers["If-Match"] = confirmation["rev"]
+            self.headers["Content-Type"] = "application/zip"
+            response = requests.put(
+                request_uri,
+                headers = self.headers,
+                data = json.dumps(updated_doc["_attachments"][kwargs["attachment"]]["data"])
+            )
+            confirmation = json.loads(response.text)
         return confirmation
 
-    def __put(self,doc_id: str = "", updated_doc: str = ""):
-        response = requests.put(
-            f'https://{self.auth}/{doc_id}',
+    def post(self, doc: str = "", op: str = "") -> dict:
+        response = requests.post(
+            f'http://{self.auth}/{self.name}/{op}',
             headers=self.headers,
-            data=json.dumps(updated_doc)
+            data=json.dumps(doc)
         )
         confirmation = json.loads(response.text)
         return confirmation
