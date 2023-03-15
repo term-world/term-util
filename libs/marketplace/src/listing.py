@@ -26,6 +26,7 @@ class Listing:
     def serialize(self) -> dict:
         obj = importlib.import_module(self.name)
         return {
+            "Module": self.name,
             "Author": self.author,
             "Date": self.date,
             "Version": "v0.1.0",
@@ -53,13 +54,8 @@ class Listing:
         conn.request.get("listings")
 
     def pack(self):
-        pass
-
-        """
-            To create a pyz package:
-                * pack = Package(name = "NAME_OF_CLASS", files="FILES_TO_ADD")
-                * pack.make()
-        """
+        pack = Package(name = self.name, files = f"{self.name}.py")
+        pack.make()
 
     def build(self) -> dict:
         print(self.serialize())
