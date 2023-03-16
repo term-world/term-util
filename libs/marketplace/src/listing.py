@@ -40,6 +40,11 @@ class Listing:
                 return True
         return False
 
+    # TODO: Process catalog status which reveals one of two outcomes
+    #       1. Catalog record exists, only send version and update catalog versions
+    #       2. No catalog exists, send catalog record, send version, and update catalog versions
+    #       (The second and third seem like reusable functions.)
+
     def is_version(self) -> str:
         conn = Connection("marketplace")
         conn.request.get("items")
