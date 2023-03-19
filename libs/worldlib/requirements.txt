@@ -1,2 +1,2 @@
-inventory==0.1
+inventory==0.2
 narrator==0.1
