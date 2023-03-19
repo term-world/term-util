@@ -4,6 +4,8 @@ import openai
 from rich.console import Console
 from rich.markdown import Markdown
 
+from .spinner import SpinThread
+
 API = {
     "key": os.getenv("OPEN_AI_KEY"),
     "org": os.getenv("OPEN_AI_ORG")
@@ -36,6 +38,8 @@ def render(response: str = "") -> None:
     console.print(markdown)
 
 def query(question: str = "") -> str:
+    spinner = SpinThread()
+    spinner.start()
     PROMPTS.append(
         {"role": "user", "content": question}
     )
@@ -46,4 +50,5 @@ def query(question: str = "") -> str:
         n = 1
     )
     response = parse(responses)
+    spinner.stop()
     render(response)
