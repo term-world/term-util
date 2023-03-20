@@ -23,8 +23,9 @@ class Listing:
         obj = importlib.import_module(self.name)
         # Serializes the catalog record
         return {
-            "package": self.name,
-            "author": self.author
+            "pkg_name": self.name.lower() # We need to "sanitize this...later
+            "nice_name": self.name,
+            "owners": [self.author]
             "description": getattr(obj, self.name)().use.__doc__
         }
 
@@ -55,15 +56,22 @@ class Listing:
         pack.make()
 
     def build(self) -> dict:
+        # Connects to DB
         conn = Connection("marketplace")
-
-        for x in conn.request.view("items")["rows"]:
-            if self.name.lower() == x["key"].lower():
-                location = len(x["value"]["versions"])
-                v_number = f"v{location+1}"
+        # Queries only for pkg_name and author match
+        matches = conn.request.query(
+            pkg_name={"op":"EQUALS", "arg":self.name.lower()},
+            owners={"op":"GREATER THAN", "arg":self.author}
+        )
+#        for x in conn.request.view("items")["rows"]:
+#            if self.name.lower() == x["key"].lower():
+#                location = len(x["value"]["versions"])
+#                v_number = f"v{location+1}"
                 # creates the new objects id to add to the exisiting library for this object
-                break
-
+#                break
+        version = 1
+        if matches:
+            version = len(matches["values"]["versions"]) + 1
         if not location:
             pass
             #if the library does not exist, create a new library with new library id
