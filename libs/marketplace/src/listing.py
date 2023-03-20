@@ -4,6 +4,7 @@ import importlib
 from datetime import datetime
 from inventory import Validator
 from .packager import Package
+from .item import Item
 
 from couchsurf import Connection
 from couchsurf import request
@@ -78,7 +79,7 @@ class Listing:
         if not location:
             pass
             #if the library does not exist, create a new library with new library id
-        else:
+        """else:
             #Creates the new object json and adds to existing CouchDB library
             uuid = conn.request.get_new_id()
             result = conn.request.put(
@@ -90,7 +91,7 @@ class Listing:
                     "package": #TODO: GIVE ME MY PACKAGE
                 },
                 attachment= f"{self.name}.pyz"
-            )
+            )"""
             #print(f"[MARKETPLACE][{result}]Document Uploaded to Marketplace")
 
     def list(self) -> None:
