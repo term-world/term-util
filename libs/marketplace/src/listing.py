@@ -55,13 +55,14 @@ class Listing:
         pack.make()
 
     def build(self) -> dict:
+        """Ask for name of the pyz file, author of specific version and, owner of library in order to add version"""
         conn = Connection("marketplace")
 
         for x in conn.request.view("items")["rows"]:
             if self.name.lower() == x["key"].lower():
                 location = len(x["value"]["versions"])
                 v_number = f"v{location+1}"
-                # creates the new objects id to add to the exisiting library for this object
+                # creates the new objects id to add to the existing library for this object
                 break
 
         if not location:
