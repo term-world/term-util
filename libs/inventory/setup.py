@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="inventory",
-    version="0.1",
+    version="0.2",
     packages=['inventory'],
     package_dir={'inventory': 'src'},
     include_package_data=True,

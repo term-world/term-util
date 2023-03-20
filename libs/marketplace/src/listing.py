@@ -11,20 +11,24 @@ from couchsurf import request
 class Listing:
 
     def __init__(self, files: any = ""):
+        # TODO: Is valid discovers validity, but doesn't
+        #       tell us anything about the name?
         if self.is_valid(files):
             print("[MARKETPLACE] Passed validation...")
             self.author = os.getlogin()
             self.date = datetime.now().timestamp()
             # TODO: Suggest defaults based on file names and precalculated
             #       values for name and author, for example.
-            self.name = input("[MARKETPLACE] Name of package to list: ")
+            self.name = input(f"[MARKETPLACE] Name of package to list: ")
+            self.author = input(f"[MARKETPLACE] Author name({self.author}): ")
 
     def serialize(self) -> dict:
         obj = importlib.import_module(self.name)
         # Serializes the catalog record
         return {
-            "package": self.name,
-            "author": self.author
+            "pkg_name": self.name.lower(), # We need to "sanitize this...later
+            "nice_name": self.name,
+            "owners": [self.author],
             "description": getattr(obj, self.name)().use.__doc__
         }
 
@@ -55,24 +59,39 @@ class Listing:
         pack.make()
 
     def build(self) -> dict:
-        """Ask for name of the pyz file, author of specific version and, owner of library in order to add version"""
+        # Connects to DB
         conn = Connection("marketplace")
-
-        for x in conn.request.view("items")["rows"]:
-            if self.name.lower() == x["key"].lower():
-                location = len(x["value"]["versions"])
-                v_number = f"v{location+1}"
-                # creates the new objects id to add to the existing library for this object
-                break
-
+        # Queries only for pkg_name and author match
+        matches = conn.request.query(
+            pkg_name={"op":"EQUALS", "arg": self.pkg_name},
+            owners={"op":"GREATER THAN", "arg": self.author}
+        )
+#        for x in conn.request.view("items")["rows"]:
+#            if self.name.lower() == x["key"].lower():
+#                location = len(x["value"]["versions"])
+#                v_number = f"v{location+1}"
+                # creates the new objects id to add to the exisiting library for this object
+#                break
+        version = 1
+        if matches:
+            version = len(matches["values"]["versions"]) + 1
         if not location:
             pass
             #if the library does not exist, create a new library with new library id
         else:
             #Creates the new object json and adds to existing CouchDB library
             uuid = conn.request.get_new_id()
-            result = conn.request.put(doc_id=uuid, doc={"author":self.author,"date":self.date,"version":v_number,"package":}, attachment= f"{self.name}.pyz")
-            print(f"[MARKETPLACE][{result}]Document Uploaded to Marketplace")
+            result = conn.request.put(
+                doc_id=uuid,
+                doc={
+                    "author":self.author,
+                    "date":self.date,
+                    "version":version,
+                    "package": #TODO: GIVE ME MY PACKAGE
+                },
+                attachment= f"{self.name}.pyz"
+            )
+            #print(f"[MARKETPLACE][{result}]Document Uploaded to Marketplace")
 
     def list(self) -> None:
         pass
