@@ -6,6 +6,7 @@ from inventory import Validator
 from .packager import Package
 
 from couchsurf import Connection
+from couchsurf import request
 
 class Listing:
 
@@ -21,7 +22,7 @@ class Listing:
             print("[MARKETPLACE] Passed validation...")
             self.author = os.getlogin()
             self.date = datetime.now().timestamp()
-            self.name = str(input("[MARKETPLACE] Name of package to list: "))
+            self.name = str(input("[MARKETPLACE] Enter Name of Package: "))
 
     def serialize(self) -> dict:
         obj = importlib.import_module(self.name)
@@ -53,16 +54,30 @@ class Listing:
         conn.request.get("listings")
 
     def pack(self):
-        pass
-
-        """
-            To create a pyz package:
-                * pack = Package(name = "NAME_OF_CLASS", files="FILES_TO_ADD")
-                * pack.make()
-        """
+        pack = Package(name = self.name, files = f"{self.name}.py")
+        pack.make()
 
     def build(self) -> dict:
-        print(self.serialize())
+        conn = Connection("marketplace")
 
+        for x in conn.request.view("items")["rows"]:
+            if self.name.lower() == x["key"].lower():
+                location = len(x["value"]["versions"])
+                v_number = f"v{location+1}"
+                # creates the new objects id to the exisiting library using the existing librarys id
+                break
+
+        if not location:
+            pass
+            #if the library does not exist, create a new library with new library id
+
+        """Creates the new object json and adds to CouchDB."""
+        uuid = conn.request.get("_uuids")["uuids"][location] #asks for an id that doesnt exist?
+        result = conn.request.put(doc_id=uuid, doc={"date":self.date,"version":v_number}, attachment= f"{self.name}.pyz")
+        print(f"[MARKETPLACE][{result}]Document Uploaded to Marketplace")
+
+            
+
+            
     def list(self) -> None:
         pass
