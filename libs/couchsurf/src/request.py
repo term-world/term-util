@@ -27,6 +27,11 @@ class Request:
         )
         return json.loads(response.text)
 
+    def get_new_id(self) -> str:
+        """ Retrieves a single unassigned UUID """
+        uuids = self.get("_uuids")
+        return uuids["uuids"][-1]
+
     def view(self, view_path: str = "", **kwargs) -> dict:
         params = None
         if kwargs:
