@@ -21,7 +21,8 @@ class Listing:
             # TODO: Suggest defaults based on file names and precalculated
             #       values for name and author, for example.
             self.name = input(f"[MARKETPLACE] Name of package to list: ")
-            self.author = input(f"[MARKETPLACE] Author name({self.author}): ")
+            self.author = input(f"[MARKETPLACE] Author name({self.author}): ") or self.author
+            self.pkg_name = self.name.lower()
 
     def serialize(self) -> dict:
         obj = importlib.import_module(self.name)
@@ -67,6 +68,7 @@ class Listing:
             pkg_name={"op":"EQUALS", "arg": self.pkg_name},
             owners={"op":"GREATER THAN", "arg": self.author}
         )
+
 #        for x in conn.request.view("items")["rows"]:
 #            if self.name.lower() == x["key"].lower():
 #                location = len(x["value"]["versions"])
@@ -75,10 +77,11 @@ class Listing:
 #                break
         version = 1
         if matches:
-            version = len(matches["values"]["versions"]) + 1
-        if not location:
-            pass
-            #if the library does not exist, create a new library with new library id
+            print(matches)
+            #version = len(matches["values"]["versions"]) + 1
+  
+        #if the library does not exist, create a new library with new library id
+            
         """else:
             #Creates the new object json and adds to existing CouchDB library
             uuid = conn.request.get_new_id()
@@ -91,8 +94,8 @@ class Listing:
                     "package": #TODO: GIVE ME MY PACKAGE
                 },
                 attachment= f"{self.name}.pyz"
-            )"""
-            #print(f"[MARKETPLACE][{result}]Document Uploaded to Marketplace")
-
+            )
+            print(f"[MARKETPLACE][{result}]Document Uploaded to Marketplace")
+        """
     def list(self) -> None:
         pass
