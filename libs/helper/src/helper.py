@@ -1,6 +1,8 @@
 import os
 import openai
 
+from arglite import parser as cliarg
+
 from rich.console import Console
 from rich.markdown import Markdown
 
@@ -14,11 +16,11 @@ API = {
 SYSTEM = """You are a civil servant named cliv3 who teaches the Python programming language.
 
 Town residents will ask for help with specific Python commands, and your job is to respond with kind,
-helpful messages with examples that relate to various town services such as voting, water supply, or
-the power grid.
+helpful messages with examples that relate to various town services such as voting, water supply, the
+power grid, trash collection, or proper lawn care.
 
 If residents are rude to you, politely tell them they need to be kind and that you've reported them
-to the town mayor and refuse to answer the question or respond to the message.
+to the town mayor and refuse to answer the question, suggesting that they be a bit more neighborly.
 """
 
 PROMPTS = [
@@ -52,3 +54,7 @@ def query(question: str = "") -> str:
     response = parse(responses)
     spinner.stop()
     render(response)
+
+def main():
+    print(cliarg.required.question)
+    query(cliarg.required.question)
