@@ -21,14 +21,14 @@ class Listing:
             # TODO: Suggest defaults based on file names and precalculated
             #       values for name and author, for example.
             self.name = input(f"[MARKETPLACE] Name of package to list: ")
+            self.lib_name = self.name.lower()
             self.author = input(f"[MARKETPLACE] Author name({self.author}): ") or self.author
-            self.pkg_name = self.name.lower()
 
     def serialize(self) -> dict:
         obj = importlib.import_module(self.name)
         # Serializes the catalog record
         return {
-            "pkg_name": self.name.lower(), # We need to "sanitize this...later
+            "lib_name": self.name.lower(), # We need to "sanitize this...later
             "nice_name": self.name,
             "owners": [self.author],
             "description": getattr(obj, self.name)().use.__doc__
@@ -52,6 +52,34 @@ class Listing:
     #       2. No catalog exists, send catalog record, send version, and update catalog versions
     #       (The second and third seem like reusable functions.)
 
+    def make_library(self,conn,ver_uuid):
+            conn.request.put(
+                doc_id=conn.request.get_new_id(),
+                doc={
+                    "lib_name": self.lib_name,
+                    "nice_name": self.name,
+                    "type": "library",
+                    "owners": [self.author],
+                    "description": getattr(self.name,"use").__doc__,
+                    "versions": {"v1": ver_uuid}
+                }
+            )
+            print(f"[MARKETPLACE][{self.name}]Library added to Marketplace")
+
+    def make_version(self,conn,matches,version,ver_uuid):
+            conn.request.put(
+                doc_id=ver_uuid,
+                doc={
+                    "package": matches["docs"],
+                    "type": "version",
+                    "author":self.author,
+                    "date":self.date,
+                    "version":version,
+                },
+                attachment= f"{self.name}.pyz"
+            )
+            print(f"[MARKETPLACE][{self.name}][{version}]Document Uploaded to Marketplace")
+
     def is_version(self) -> str:
         conn = Connection("marketplace")
         conn.request.get("items")
@@ -61,41 +89,21 @@ class Listing:
         pack.make()
 
     def build(self) -> dict:
-        # Connects to DB
         conn = Connection("marketplace")
-        # Queries only for pkg_name and author match
         matches = conn.request.query(
-            pkg_name={"op":"EQUALS", "arg": self.pkg_name},
+            lib_name={"op":"EQUALS", "arg": self.lib_name},
             owners={"op":"GREATER THAN", "arg": self.author}
         )
+        ver_uuid = conn.request.get_new_id()
 
-#        for x in conn.request.view("items")["rows"]:
-#            if self.name.lower() == x["key"].lower():
-#                location = len(x["value"]["versions"])
-#                v_number = f"v{location+1}"
-                # creates the new objects id to add to the exisiting library for this object
-#                break
-        version = 1
-        if matches:
-            print(matches)
-            #version = len(matches["values"]["versions"]) + 1
-  
-        #if the library does not exist, create a new library with new library id
+        if not matches:
+            version = 1
+            self.make_library(conn,ver_uuid)
+            # TODO: create new function to clean up the nice name and create a library name that is only lowercase letters
+        else:
+            version = len(matches["docs"][0]["versions"]) + 1
             
-        """else:
-            #Creates the new object json and adds to existing CouchDB library
-            uuid = conn.request.get_new_id()
-            result = conn.request.put(
-                doc_id=uuid,
-                doc={
-                    "author":self.author,
-                    "date":self.date,
-                    "version":version,
-                    "package": #TODO: GIVE ME MY PACKAGE
-                },
-                attachment= f"{self.name}.pyz"
-            )
-            print(f"[MARKETPLACE][{result}]Document Uploaded to Marketplace")
-        """
+        self.make_version(conn,matches,version,ver_uuid)
+        
     def list(self) -> None:
         pass
