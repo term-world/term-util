@@ -77,7 +77,7 @@ class Request:
         response = requests.put(
             request_uri,
             headers = self.headers,
-            data = json.dumps(updated_doc)
+            data = json.dumps(doc)
         )
         confirmation = json.loads(response.text)
         if "attachment" in kwargs:
