@@ -1,12 +1,15 @@
 import os
 import openai
 
-from arglite import parser as cliarg
-
+from rich.live import Live
 from rich.console import Console
 from rich.markdown import Markdown
+from rich.style import Style
 
+from .motd import *
 from .spinner import SpinThread
+
+from time import sleep
 
 API = {
     "key": os.getenv("OPEN_AI_KEY"),
@@ -30,39 +33,57 @@ PROMPTS = [
 openai.api_key = API["key"]
 openai.api_org = API["org"]
 
-def parse(responses: dict = {}) -> str:
-    for choice in responses["choices"]:
-        return choice["message"]["content"].strip()
+class Helper:
 
-def render(response: str = "") -> None:
-    console = Console()
-    markdown = Markdown(response)
-    console.print(markdown)
+    def __init__(self):
+        self.console = Console()
 
-def query(question: str = "") -> str:
-    spinner = SpinThread()
-    spinner.start()
-    PROMPTS.append(
-        {"role": "user", "content": question}
-    )
-    responses = openai.ChatCompletion.create(
-        model = "gpt-4",
-        messages = PROMPTS,
-        temperature = 0.1,
-        n = 1
-    )
-    response = parse(responses)
-    spinner.stop()
-    render(response)
+    def parse(self, responses: dict = {}) -> str:
+        for chunk in responses:
+            try:
+                msg = chunk["choices"][0]["delta"]["content"]
+                yield msg
+            except KeyError:
+                pass
 
-def motd() -> None:
-    with open("motd", "r") as fh:
-        msg = fh.read()
-    render(msg)
+    def render(self, response: str = "") -> None:
+        self.console.clear()
+        markdown = Markdown("\r" + response)
+        self.console.print(markdown)
 
-def chat() -> None:
-    motd()
-    while True:
-        question = input("🤖 What Python topic would you like to ask about? ")
-        query(question)
+    def query(self,question: str = "") -> str:
+        PROMPTS.append(
+            {"role": "user", "content": question}
+        )
+        responses = openai.ChatCompletion.create(
+            model = "gpt-4",
+            messages = PROMPTS,
+            temperature = 0.1,
+            stream = True,
+            n = 1
+        )
+        chunks = []
+        with Live(console = self.console, refresh_per_second = 6) as live:
+            response = self.parse(responses)
+            for chr in response:
+                chunks.append(chr)
+                live.update(
+                    self.render(''.join([chunk for chunk in chunks]))
+                )
+                sleep(0.1)
 
+    def motd(self) -> None:
+        self.render(msg)
+
+    def chat(self) -> None:
+        self.motd()
+        while True:
+            question = input("🤖 CLIV3: What Python topic would you like to ask about? ")
+            if question.lower() == "q":
+                print("🤖 CLIV3: Goodbyte!")
+                break
+            self.query(question)
+
+def main():
+    cliv3 = Helper()
+    cliv3.chat()
