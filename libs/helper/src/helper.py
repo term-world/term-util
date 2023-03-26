@@ -55,6 +55,14 @@ def query(question: str = "") -> str:
     spinner.stop()
     render(response)
 
-def main():
-    print(cliarg.required.question)
-    query(cliarg.required.question)
+def motd() -> None:
+    with open("motd", "r") as fh:
+        msg = fh.read()
+    render(msg)
+
+def chat() -> None:
+    motd()
+    while True:
+        question = input("🤖 What Python topic would you like to ask about? ")
+        query(question)
+
