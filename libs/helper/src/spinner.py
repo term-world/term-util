@@ -15,9 +15,7 @@ class SpinThread(threading.Thread):
 
     def __spin(self):
         with Live(
-            Spinner('dots3', text = "Waiting for response...", style = "green")
+            Spinner('dots3', text = "Waiting for response...\n", style = "green")
         ) as live:
             while not self.__stopevent.isSet():
                 sleep(0.1)
-        print("🤖 cliv3: I found an answer! Check it out below.", end = "\n\n")
-
