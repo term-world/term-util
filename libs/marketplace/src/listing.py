@@ -52,6 +52,8 @@ class Listing:
     #       2. No catalog exists, send catalog record, send version, and update catalog versions
     #       (The second and third seem like reusable functions.)
 
+    # TODO: Give my bad functions default values
+
     def make_library(self,conn,ver_uuid):
             conn.request.put(
                 doc_id=conn.request.get_new_id(),
@@ -101,9 +103,11 @@ class Listing:
             self.make_library(conn,ver_uuid)
             # TODO: create new function to clean up the nice name and create a library name that is only lowercase letters
         else:
-            version = len(matches["docs"][0]["versions"]) + 1
+            #for x in matches["docs"]:
+                #if self.lib_name == matches["docs"][]
+                    #version = len(matches["docs"][0]["versions"]) + 1
             
-        self.make_version(conn,matches,version,ver_uuid)
+        #self.make_version(conn,matches,version,ver_uuid)
         
     def list(self) -> None:
         pass
