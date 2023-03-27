@@ -3,8 +3,10 @@ import importlib
 
 from datetime import datetime
 from inventory import Validator
+
 from .packager import Package
 from .item import Item
+from .library import Record
 
 from couchsurf import Connection
 from couchsurf import request
@@ -94,16 +96,25 @@ class Listing:
             lib_name={"op":"EQUALS", "arg": self.lib_name},
             owners={"op":"GREATER THAN", "arg": self.author}
         )
-        ver_uuid = conn.request.get_new_id()
 
         if not matches:
             version = 1
-            self.make_library(conn,ver_uuid)
+            self.make_library(
+                conn,
+                conn.request.get_new_id()
+            )
             # TODO: create new function to clean up the nice name and create a library name that is only lowercase letters
         else:
             version = len(matches["docs"][0]["versions"]) + 1
-            
-        self.make_version(conn,matches,version,ver_uuid)
-        
+            for doc in matches["docs"]:
+                record = Record(doc)
+
+        self.make_version(
+            conn,
+            matches,
+            version,
+            conn.request.get_new_id()
+        )
+
     def list(self) -> None:
         pass
