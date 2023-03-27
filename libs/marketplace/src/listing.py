@@ -18,6 +18,7 @@ class Listing:
         #       tell us anything about the name?
         if self.is_valid(files):
             print("[MARKETPLACE] Passed validation...")
+            self.conn = Connection("marketplace")
             self.author = os.getlogin()
             self.date = datetime.now().timestamp()
             # TODO: Suggest defaults based on file names and precalculated
@@ -54,9 +55,11 @@ class Listing:
     #       2. No catalog exists, send catalog record, send version, and update catalog versions
     #       (The second and third seem like reusable functions.)
 
-    def make_library(self,conn,ver_uuid):
-            conn.request.put(
-                doc_id=conn.request.get_new_id(),
+    # TODO: Give my bad functions default values
+
+    def make_library(self,ver_uuid):
+            self.conn.request.put(
+                doc_id=self.conn.request.get_new_id(),
                 doc={
                     "lib_name": self.lib_name,
                     "nice_name": self.name,
@@ -68,31 +71,29 @@ class Listing:
             )
             print(f"[MARKETPLACE][{self.name}]Library added to Marketplace")
 
-    def make_version(self,conn,matches,version,ver_uuid):
-            conn.request.put(
+    def make_version(self,matches,version,ver_uuid):
+            self.conn.request.put(
                 doc_id=ver_uuid,
                 doc={
                     "package": matches["docs"],
                     "type": "version",
                     "author":self.author,
                     "date":self.date,
-                    "version":version,
+                    "version":f"v{version}",
                 },
                 attachment= f"{self.name}.pyz"
             )
             print(f"[MARKETPLACE][{self.name}][{version}]Document Uploaded to Marketplace")
 
     def is_version(self) -> str:
-        conn = Connection("marketplace")
-        conn.request.get("items")
+        self.conn.request.get("items")
 
     def pack(self):
         pack = Package(name = self.name, files = f"{self.name}.py")
         pack.make()
 
     def build(self) -> dict:
-        conn = Connection("marketplace")
-        matches = conn.request.query(
+        matches = self.conn.request.query(
             lib_name={"op":"EQUALS", "arg": self.lib_name},
             owners={"op":"GREATER THAN", "arg": self.author}
         )
@@ -105,9 +106,10 @@ class Listing:
             )
             # TODO: create new function to clean up the nice name and create a library name that is only lowercase letters
         else:
-            version = len(matches["docs"][0]["versions"]) + 1
-            for doc in matches["docs"]:
-                record = Record(doc)
+            for x in range(len(matches["docs"])):
+                record = Record(matches["docs"][x])
+                if self.lib_name == record.lib_name:
+                    version = len(record.versions) + 1
 
         self.make_version(
             conn,
