@@ -6,5 +6,5 @@ msg = """
 ```
 ##  cliv3 v.0.1.0: the term-world helper!
 
-_Enter 'Q' at any time to quit the helper_
+*Enter 'Q' at any prompt to quit the helper*
 """

@@ -37,8 +37,10 @@ class Helper:
 
     def __init__(self):
         self.console = Console()
+        self.chars = 0
+        self.offset = 0
 
-    def parse(self, responses: dict = {}) -> str:
+    def parse_stream(self, responses: dict = {}) -> str:
         for chunk in responses:
             try:
                 msg = chunk["choices"][0]["delta"]["content"]
@@ -46,31 +48,28 @@ class Helper:
             except KeyError:
                 pass
 
+    def parse_blob(self, responses: dict = {}) -> str:
+        for choice in responses["choices"]:
+            return choice["message"]["content"].strip()
+
     def render(self, response: str = "") -> None:
-        self.console.clear()
-        markdown = Markdown("\r" + response)
-        self.console.print(markdown)
+        markdown = Markdown('\r' + response)
+        self.console.print(markdown, soft_wrap = False, end = '\r')
 
     def query(self,question: str = "") -> str:
-        PROMPTS.append(
-            {"role": "user", "content": question}
-        )
-        responses = openai.ChatCompletion.create(
-            model = "gpt-4",
-            messages = PROMPTS,
-            temperature = 0.1,
-            stream = True,
-            n = 1
-        )
-        chunks = []
-        with Live(console = self.console, refresh_per_second = 6) as live:
-            response = self.parse(responses)
-            for chr in response:
-                chunks.append(chr)
-                live.update(
-                    self.render(''.join([chunk for chunk in chunks]))
-                )
-                sleep(0.1)
+        with self.console.status("Waiting for response...", spinner = "clock"):
+            PROMPTS.append(
+                {"role": "user", "content": question}
+            )
+            responses = openai.ChatCompletion.create(
+                model = "gpt-4",
+                messages = PROMPTS,
+                temperature = 0.1,
+                stream = False,
+                n = 1
+            )
+            response = self.parse_blob(responses)
+            self.render(response)
 
     def motd(self) -> None:
         self.render(msg)
