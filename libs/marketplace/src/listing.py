@@ -76,7 +76,7 @@ class Listing:
                     "type": "version",
                     "author":self.author,
                     "date":self.date,
-                    "version":version,
+                    "version":f"v{version}",
                 },
                 attachment= f"{self.name}.pyz"
             )
@@ -103,11 +103,11 @@ class Listing:
             self.make_library(conn,ver_uuid)
             # TODO: create new function to clean up the nice name and create a library name that is only lowercase letters
         else:
-            #for x in matches["docs"]:
-                #if self.lib_name == matches["docs"][]
-                    #version = len(matches["docs"][0]["versions"]) + 1
+            for x in range(len(matches["docs"])):
+                if self.lib_name == matches["docs"][x]["lib_name"]:
+                    version = len(matches["docs"][x]["versions"]) + 1
             
-        #self.make_version(conn,matches,version,ver_uuid)
+        self.make_version(conn,matches,version,ver_uuid)
         
     def list(self) -> None:
         pass
