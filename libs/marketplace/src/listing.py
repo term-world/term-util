@@ -1,5 +1,6 @@
 import os
 import importlib
+import re
 
 from datetime import datetime
 from inventory import Validator
@@ -14,17 +15,13 @@ from couchsurf import request
 class Listing:
 
     def __init__(self, files: any = ""):
-        # TODO: Is valid discovers validity, but doesn't
-        #       tell us anything about the name?
-        if self.is_valid(files):
+        self.name = input(f"[MARKETPLACE] Name of package to list: ")
+        if self.is_valid(f"{self.name}.py"):
             print("[MARKETPLACE] Passed validation...")
             self.conn = Connection("marketplace")
             self.author = os.getlogin()
             self.date = datetime.now().timestamp()
-            # TODO: Suggest defaults based on file names and precalculated
-            #       values for name and author, for example.
-            self.name = input(f"[MARKETPLACE] Name of package to list: ")
-            self.lib_name = self.name.lower()
+            self.lib_name = re.sub(r'[^a-zA-Z0-9]', '', self.name).lower()
             self.author = input(f"[MARKETPLACE] Author name({self.author}): ") or self.author
 
     def serialize(self) -> dict:
@@ -57,33 +54,33 @@ class Listing:
 
     # TODO: Give my bad functions default values
 
-    def make_library(self,ver_uuid):
-            self.conn.request.put(
-                doc_id=self.conn.request.get_new_id(),
-                doc={
-                    "lib_name": self.lib_name,
-                    "nice_name": self.name,
-                    "type": "library",
-                    "owners": [self.author],
-                    "description": getattr(self.name,"use").__doc__,
-                    "versions": {"v1": ver_uuid}
-                }
-            )
-            print(f"[MARKETPLACE][{self.name}]Library added to Marketplace")
+    def make_library(self,version,ver_uuid,ver_dict,owners):
+        self.conn.request.put(
+            doc_id=self.conn.request.get_new_id(),
+            doc={
+                "lib_name": self.lib_name,
+                "nice_name": self.name,
+                "type": "library",
+                "owners": owners,
+                "description": getattr(self.name,"use").__doc__,
+                "versions": ver_dict.update({f"v{version}": ver_uuid})
+            }
+        )
+        print(f"[MARKETPLACE][{self.name}]Library added to Marketplace!")
 
-    def make_version(self,matches,version,ver_uuid):
-            self.conn.request.put(
-                doc_id=ver_uuid,
-                doc={
-                    "package": matches["docs"],
-                    "type": "version",
-                    "author":self.author,
-                    "date":self.date,
-                    "version":f"v{version}",
-                },
-                attachment= f"{self.name}.pyz"
-            )
-            print(f"[MARKETPLACE][{self.name}][{version}]Document Uploaded to Marketplace")
+    def make_version(self,version,ver_uuid,package):
+        self.conn.request.put(
+            doc_id=ver_uuid,
+            doc={
+                "library": package,
+                "type": "version",
+                "author":self.author,
+                "date":self.date,
+                "version":f"v{version}",
+            },
+            attachment= f"{self.name}.pyz"
+        )
+        print(f"[MARKETPLACE][{self.name}][{version}]Document Uploaded to Marketplace!")
 
     def is_version(self) -> str:
         self.conn.request.get("items")
@@ -97,26 +94,37 @@ class Listing:
             lib_name={"op":"EQUALS", "arg": self.lib_name},
             owners={"op":"GREATER THAN", "arg": self.author}
         )
+        version_uuid = self.conn.request.get_new_id()
 
         if not matches:
-            version = 1
-            self.make_library(
-                conn,
-                conn.request.get_new_id()
-            )
-            # TODO: create new function to clean up the nice name and create a library name that is only lowercase letters
+            version_type = 1
+            stored_versions_dict = {}
+            owners = [self.author]
         else:
             for x in range(len(matches["docs"])):
                 record = Record(matches["docs"][x])
                 if self.lib_name == record.lib_name:
-                    version = len(record.versions) + 1
-
-        self.make_version(
-            conn,
-            matches,
-            version,
-            conn.request.get_new_id()
+                    version_type = len(record.versions) + 1
+                    package = record._id
+                    stored_versions_dict = record.versions
+                    owners = record.owners
+                    if self.author not in owners:
+                        owners.append(self.author)
+        
+        self.make_library(
+            version_type,
+            version_uuid,
+            stored_versions_dict,
+            owners
         )
+        self.pack()
+        self.make_version(
+            version_type,
+            version_uuid,
+            package
+        )
+        os.remove(f"{self.name}.pyz")
+        
 
     def list(self) -> None:
         pass
