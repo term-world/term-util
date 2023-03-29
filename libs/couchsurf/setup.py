@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="couchsurf",
-    version="0.2",
+    version="0.3",
     packages=['couchsurf'],
     package_dir={'couchsurf': 'src'},
     include_package_data=True,
