@@ -18,6 +18,8 @@ class Listing:
         self.name = input(f"[MARKETPLACE] Name of package to list: ")
         if self.is_valid(f"{self.name}.py"):
             print("[MARKETPLACE] Passed validation...")
+            import f"{self.name}.py" as file_class
+            self.file_class = file_class
             self.conn = Connection("marketplace")
             self.author = os.getlogin()
             self.date = datetime.now().timestamp()
@@ -62,7 +64,7 @@ class Listing:
                 "nice_name": self.name,
                 "type": "library",
                 "owners": owners,
-                "description": getattr(self.name,"use").__doc__,
+                "description": getattr(self.file_class,"use").__doc__,
                 "versions": ver_dict.update({f"v{version}": ver_uuid})
             }
         )
