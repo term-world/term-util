@@ -41,17 +41,6 @@ class Listing:
 
     # TODO: Give my bad functions default values
 
-    def make_library(self,version,ver_uuid,ver_dict,owners):
-        self.conn.request.put(
-            doc_id=self.conn.request.get_new_id(),
-            doc={
-                "lib_name": self.lib_name,
-                "nice_name": self.name,
-                "type": "library",
-                "owners": owners,
-                "description": getattr(self.file_class,"use").__doc__,
-                "versions": ver_dict.update({f"v{version}": ver_uuid})
-            })
     def make_db_entry(self, data: any, **kwargs) -> None:
         if "attachment" in kwargs:
             self.pack()
@@ -95,7 +84,7 @@ class Listing:
         )
         # If there are matches, set self.library to the data
         if matches["docs"]:
-            # TODO: Still need a high-confidence way to tell if this is 
+            # TODO: Still need a high-confidence way to tell if this is
             #       the library we're looking for?
             self.library = Library(**matches["docs"][0])
             self.versions = len(self.library.versions)
