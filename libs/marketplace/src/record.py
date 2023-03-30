@@ -14,7 +14,10 @@ class Library(Record):
 
     def __init__(self, **kwargs):
         kwargs["type"] = "library"
-        kwargs["owners"] = [os.getlogin()]
+        try:
+            kwargs["owners"] = [os.getlogin()] + [kwargs["owners"]]
+        except KeyError:
+            kwargs["owners"] = [os.getlogin()]
         kwargs["nice_name"] = kwargs["name"]
         kwargs["lib_name"] = re.sub(
             r'[^a-zA-Z0-9]', '', kwargs["name"]
@@ -24,6 +27,7 @@ class Library(Record):
             kwargs["versions"] = kwargs["versions"]
         except KeyError:
             kwargs["versions"] = {}
+        kwargs["description"] = ""
         self.generate(kwargs)
 
     def add_version(self, v_no: str = "", v_id: str = ""):
