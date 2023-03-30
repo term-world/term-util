@@ -66,7 +66,7 @@ class Listing:
                 "description": getattr(self.file_class,"use").__doc__,
                 "versions": ver_dict.update({f"v{version}": ver_uuid})
             })
-    def make_db_entry(self, data: any = "", **kwargs) -> None:
+    def make_db_entry(self, data: any, **kwargs) -> None:
         if "attachment" in kwargs:
             self.pack()
             self.conn.request.put(
@@ -109,6 +109,7 @@ class Listing:
         )
         # If there are matches, set self.library to the data
         if matches["docs"]:
+            print(matches["docs"])
             self.library = Record(matches["docs"][0])
         else:
             # If no matches, we can assume this is a new library
