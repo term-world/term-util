@@ -46,7 +46,7 @@ class Listing:
             self.conn.request.put(
                 doc_id = data._id,
                 doc = data.__dict__,
-                attachment = f"{self.name}{self.ext}"
+                attachment = f"{self.name}{self.ext}z"
             )
         else:
             self.conn.request.put(
@@ -70,7 +70,7 @@ class Listing:
     def pack(self):
         pack = Package(
             files = f"{self.name}{self.ext}",
-            name = self.library.lib_name
+            name = self.name
         )
         pack.make()
 
