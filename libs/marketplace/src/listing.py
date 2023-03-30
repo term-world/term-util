@@ -39,8 +39,6 @@ class Listing:
     #       2. No catalog exists, send catalog record, send version, and update catalog versions
     #       (The second and third seem like reusable functions.)
 
-    # TODO: Give my bad functions default values
-
     def make_db_entry(self, data: any, **kwargs) -> None:
         if "attachment" in kwargs:
             self.pack()
