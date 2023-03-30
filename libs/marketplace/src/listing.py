@@ -13,21 +13,7 @@ from .record import Record, Library, Version
 
 class Listing:
 
-<<<<<<< HEAD
-    def __init__(self, files: any = ""):
-        self.name = input(f"[MARKETPLACE] Name of package to list: ")
-        if self.is_valid(f"{self.name}.py"):
-            print("[MARKETPLACE] Passed validation...")
-            import f"{self.name}.py" as file_class
-            self.file_class = file_class
-            self.conn = Connection("marketplace")
-            self.author = os.getlogin()
-            self.date = datetime.now().timestamp()
-            self.lib_name = re.sub(r'[^a-zA-Z0-9]', '', self.name).lower()
-            self.author = input(f"[MARKETPLACE] Author name({self.author}): ") or self.author
-=======
     conn = Connection("marketplace")
->>>>>>> d5ff171748e1ecd867b44897f72d0b7728bbcb91
 
     def __init__(self, files: any = ""):
         if self.is_valid(files = files):
@@ -109,8 +95,10 @@ class Listing:
         )
         # If there are matches, set self.library to the data
         if matches["docs"]:
-            print(matches["docs"])
-            self.library = Record(matches["docs"][0])
+            # TODO: Still need a high-confidence way to tell if this is 
+            #       the library we're looking for?
+            self.library = Library(**matches["docs"][0])
+            self.versions = len(self.library.versions)
         else:
             # If no matches, we can assume this is a new library
             self.library._id = self.conn.request.get_new_id()

@@ -19,7 +19,10 @@ class Library(Record):
             r'[^a-zA-Z0-9]', '', kwargs["name"]
         ).lower()
         kwargs["date"] = datetime.now().timestamp()
-        kwargs["versions"] = {}
+        try:
+            kwargs["versions"] = kwargs["versions"]
+        except KeyError:
+            kwargs["versions"] = {}
         self.generate(kwargs)
 
     def add_version(self, v_no: str = "", v_id: str = ""):
