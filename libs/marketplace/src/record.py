@@ -15,7 +15,7 @@ class Library(Record):
     def __init__(self, **kwargs):
         kwargs["type"] = "library"
         try:
-            kwargs["owners"] = [os.getlogin()] + [kwargs["owners"]]
+            kwargs["owners"] = [owner for owner in kwargs["owners"]]
         except KeyError:
             kwargs["owners"] = [os.getlogin()]
         kwargs["nice_name"] = kwargs["name"]
