@@ -77,10 +77,6 @@ class Listing:
     def build(self) -> dict:
         """ Builds the item in the DB; probably needs better name? """
         # Find any matches in the database
-        #matches = self.conn.request.query(
-        #    lib_name = {"op":"EQUALS", "arg": self.library.lib_name},
-        #    owners = {"op":"GREATER THAN", "arg": self.library.owners}
-        #)
         match = Query(
             lib_name = self.library.lib_name,
             owners = self.library.owners
