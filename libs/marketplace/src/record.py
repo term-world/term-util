@@ -13,6 +13,7 @@ class Record:
 class Library(Record):
 
     def __init__(self, **kwargs):
+        kwargs["type"] = "library"
         kwargs["owners"] = [os.getlogin()]
         kwargs["nice_name"] = kwargs["name"]
         kwargs["lib_name"] = re.sub(
