@@ -6,16 +6,20 @@ class Query:
 
     def __init__(self, **kwargs):
         terms = {
-            "type":{"op":"EQUALS", "arg":"Library"}
+            "type":{"op":"EQUALS", "arg":"library"}
         }
         for arg in kwargs:
+            op = "GREATER THAN"
+            if not type(kwargs[arg]) == list:
+                op = "LIKE"
             terms.update({
-                arg:{"op":"LIKE", "arg":kwargs[arg]}
+                arg:{"op":op, "arg":kwargs[arg]}
             })
-        self.__run(terms)
+            print(terms)
+        self.result = self.__run(terms)
 
     def __run(self, terms: dict = {}):
         result = self.conn.request.query(
             **terms
         )
-        print(result)
+        return result["docs"]
