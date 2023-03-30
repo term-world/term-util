@@ -39,8 +39,6 @@ class Listing:
     #       2. No catalog exists, send catalog record, send version, and update catalog versions
     #       (The second and third seem like reusable functions.)
 
-    # TODO: Give my bad functions default values
-
     def make_library(self,version,ver_uuid,ver_dict,owners):
         self.conn.request.put(
             doc_id=self.conn.request.get_new_id(),
