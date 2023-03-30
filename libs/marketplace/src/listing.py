@@ -10,6 +10,7 @@ from couchsurf import Connection
 
 from .packager import Package
 from .record import Record, Library, Version
+from .search import Query
 
 class Listing:
 
@@ -76,15 +77,19 @@ class Listing:
     def build(self) -> dict:
         """ Builds the item in the DB; probably needs better name? """
         # Find any matches in the database
-        matches = self.conn.request.query(
-            lib_name = {"op":"EQUALS", "arg": self.library.lib_name},
-            owners = {"op":"GREATER THAN", "arg": self.library.owners}
-        )
+        #matches = self.conn.request.query(
+        #    lib_name = {"op":"EQUALS", "arg": self.library.lib_name},
+        #    owners = {"op":"GREATER THAN", "arg": self.library.owners}
+        #)
+        match = Query(
+            lib_name = self.library.lib_name,
+            owners = self.library.owners
+        ).result
         # If there are matches, set self.library to the data
-        if matches["docs"]:
+        if match:
             # TODO: Still need a high-confidence way to tell if this is
             #       the library we're looking for?
-            self.library = Library(**matches["docs"][0])
+            self.library = Library(**match)
             self.versions = len(self.library.versions)
         else:
             # If no matches, we can assume this is a new library

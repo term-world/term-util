@@ -15,11 +15,12 @@ class Query:
             terms.update({
                 arg:{"op":op, "arg":kwargs[arg]}
             })
-            print(terms)
         self.result = self.__run(terms)
 
     def __run(self, terms: dict = {}):
         result = self.conn.request.query(
             **terms
         )
+        if len(result["docs"]) == 1:
+            return result["docs"][0]
         return result["docs"]
