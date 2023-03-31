@@ -1,5 +1,7 @@
 from couchsurf import Connection
 
+from .record import Library
+
 class Query:
 
     conn = Connection("marketplace")
@@ -15,12 +17,26 @@ class Query:
             terms.update({
                 arg:{"op":op, "arg":kwargs[arg]}
             })
-        self.result = self.__run(terms)
+        self.result = Result(self.__run(terms))
 
     def __run(self, terms: dict = {}):
         result = self.conn.request.query(
             **terms
         )
-        if len(result["docs"]) == 1:
-            return result["docs"][0]
         return result["docs"]
+
+class Result:
+
+    def __init__(self, data: any = ""):
+        self.data = data
+        self.list()
+
+    def list(self) -> None:
+        print(f"Found {len([self.data])} results.", end = "\n")
+        for entry in self.data:
+            entry = Library(**entry)
+            print(f"  * {entry.name}", end = "\n")
+
+    def enumerate(self) -> dict:
+        for entry in self.data:
+            yield entry
