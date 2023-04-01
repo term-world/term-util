@@ -1,10 +1,10 @@
 import setuptools
 
 setuptools.setup(
-    name="powergrid",
+    name="resources",
     version="0.1",
-    packages=['powergrid'],
-    package_dir={'powergrid': 'src'},
+    packages=['resources'],
+    package_dir={'resources': 'src'},
     include_package_data=True,
     description='Global resource pool for term-world resources',
     long_description=open('README.md', 'r').read(),
