@@ -13,7 +13,7 @@ class Oil(Exhaustible):
     def __init__(self):
         self.draw = 5
         self.unit = "barrel"
-        selv.energy = 1667
+        self.energy = 1667
         super().__init__(__file__)
 
     def __str__(self) -> str:

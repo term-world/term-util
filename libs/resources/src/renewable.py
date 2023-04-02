@@ -4,24 +4,30 @@ import math
 from time import sleep
 from .types import Inexhaustible
 
-def Singleton(cls):
-    def getinstances():
-        return cls()._Inexhaustible__generation()
-    return getinstances
-
-@Singleton
 class Wind(Inexhaustible):
 
+    blade_size = 0
+
     def __init__(self):
-        self.blade_num = 0
-        self.blade_size = 0
         super().__init__()
+        if self.blade_size > 115:
+            print("Blade size too long!")
+            exit()
+        self.__calc_velocity()
 
     def __calc_velocity(self):
-        m_per_second = (2 * math.pi * self.blade_size) / 20
+        sweep_area = math.pi * self.blade_size ** 2
+        self.power = (.5 * 1.23 * self.CLIMATE.wind_speed ** 3 * sweep_area) / 1000
+        self.generation(type = "Wind")
+        sleep(1)
 
-@Singleton
 class Solar(Inexhaustible):
 
-    def __init__(self, wattage: int = 0):
+    def __init__(self):
         super().__init__()
+        self.__calc_wattage()
+    
+    def __calc_wattage(self):
+        self.power = (self.wattage * .016) / 1000
+        self.generation(type = "Solar")
+        sleep(1)

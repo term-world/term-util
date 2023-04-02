@@ -61,7 +61,7 @@ class Inexhaustible:
         "Wind": {
             "possibility": CLIMATE.windy,
             "loss_coeff": 1 - .4075
-        }
+        },
         "Solar": {
             "possibility": CLIMATE.sunny,
             "loss_coeff": 1 - .250
@@ -69,12 +69,9 @@ class Inexhaustible:
     }
 
     def __init__(self):
-        self.__get_resource()
+        pass
 
-    def __get_resource(self):
-        self.name = self.__class__.__name__
-
-    def __generation(self) -> int:
-        if self.OPTIONS[self.name]["possibility"]:
-            return 1 * self.OPTIONS[self.name]["loss_coeff"]
+    def generation(self, type: str = "") -> int:
+        if self.OPTIONS[type]["possibility"]:
+            self.power *= self.OPTIONS[type]["loss_coeff"]
         return 0

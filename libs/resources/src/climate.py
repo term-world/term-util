@@ -17,6 +17,7 @@ class Climate:
         self.time = datetime.now().timestamp()
         self.windy = self.__is_windy()
         self.sunny = self.__is_sunny() and not self.__is_night()
+        self.wind_speed = STATE["wind"]["speed"]
 
     def __is_sunny(self) -> bool:
         for condition in STATE["weather"]:
