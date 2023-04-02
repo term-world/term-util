@@ -6,8 +6,6 @@ from inventory import ItemSpec
 
 from .climate import Climate
 
-CLIMATE = Climate()
-
 class Exhaustible(ItemSpec):
 
     def __init__(self, filename: str = ""):
@@ -30,7 +28,7 @@ class Exhaustible(ItemSpec):
         if not os.path.isfile(self.path):
             with open(self.path, "w") as fh:
                 json.dump(
-                    {"level": 5000},
+                    {"level": 2500},
                     fh
                 )
 
@@ -44,6 +42,9 @@ class Exhaustible(ItemSpec):
 
     def __verify_level(self) -> bool:
         if self.level - self.draw <= 0:
+            print(f"""
+Congratulations, you've used it all. There isn't a single {self.unit} left.
+            """)
             return False
         return True
 
@@ -55,5 +56,25 @@ class Exhaustible(ItemSpec):
 
 class Inexhaustible:
 
+    CLIMATE = Climate()
+    OPTIONS = {
+        "Wind": {
+            "possibility": CLIMATE.windy,
+            "loss_coeff": 1 - .4075
+        }
+        "Solar": {
+            "possibility": CLIMATE.sunny,
+            "loss_coeff": 1 - .250
+        }
+    }
+
     def __init__(self):
-        print(CLIMATE)
+        self.__get_resource()
+
+    def __get_resource(self):
+        self.name = self.__class__.__name__
+
+    def __generation(self) -> int:
+        if self.OPTIONS[self.name]["possibility"]:
+            return 1 * self.OPTIONS[self.name]["loss_coeff"]
+        return 0

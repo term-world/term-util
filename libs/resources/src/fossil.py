@@ -12,13 +12,21 @@ class Oil(Exhaustible):
 
     def __init__(self):
         self.draw = 5
-        self.unit = "barrels"
+        self.unit = "barrel"
+        selv.energy = 1667
         super().__init__(__file__)
+
+    def __str__(self) -> str:
+        return f"What else do you want? It's a {self.unit} of {self.name.lower()}."
 
 @Singleton
 class Coal(Exhaustible):
 
     def __init__(self):
         self.draw = 7
-        self.unit = "cubic feet"
+        self.unit = "short ton"
+        self.energy = 5549
         super().__init__(__file__)
+
+    def __str__(self) -> str:
+        return f"I love the smell of a good {self.unit} of burning {self.name.lower()}."
