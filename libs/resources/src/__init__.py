@@ -1,1 +1,1 @@
-from .oil import Oil
+from .fossil import Oil
