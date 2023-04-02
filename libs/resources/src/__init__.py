@@ -1,3 +1,3 @@
-from .resources import Exhaustible
-import .oilfield as oilfield
-import .coalmine as coalmine
+from .fossil import Oil, Coal
+from .synthetic import Nuclear
+from .renewable import Wind, Solar
