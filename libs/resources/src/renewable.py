@@ -28,6 +28,8 @@ class Wind(Inexhaustible):
 
 class Solar(Inexhaustible):
 
+    wattage = 0
+
     def __init__(self):
         super().__init__()
         if self.wattage not in [250, 300, 350, 400]:
