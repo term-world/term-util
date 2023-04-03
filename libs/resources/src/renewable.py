@@ -25,6 +25,9 @@ class Solar(Inexhaustible):
 
     def __init__(self):
         super().__init__()
+        if self.wattage not in [250, 300, 350, 400]:
+            print("Panel not in approved sizes.")
+            exit()
         self.__calc_wattage()
     
     def __calc_wattage(self):
