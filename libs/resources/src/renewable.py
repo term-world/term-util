@@ -4,6 +4,10 @@ import math
 from time import sleep
 from .types import Inexhaustible
 
+from rich.console import Console
+
+CONSOLE = Console()
+
 class Wind(Inexhaustible):
 
     blade_size = 0
@@ -19,7 +23,8 @@ class Wind(Inexhaustible):
         sweep_area = math.pi * self.blade_size ** 2
         self.power = (.5 * 1.23 * self.CLIMATE.wind_speed ** 3 * sweep_area) / 1000
         self.generation(type = "Wind")
-        sleep(1 + self.blade_size / 100)
+        with CONSOLE.status("Generating wind power...", spinner = "earth"):
+            sleep(1 + self.blade_size / 100)
 
 class Solar(Inexhaustible):
 
@@ -29,8 +34,9 @@ class Solar(Inexhaustible):
             print("Panel not in approved sizes.")
             exit()
         self.__calc_wattage()
-    
+
     def __calc_wattage(self):
         self.power = (self.wattage * .016) / 1000
         self.generation(type = "Solar")
-        sleep(1)
+        with CONSOLE.status("Generating solar power...", spinner = "weather"):
+            sleep(1)
