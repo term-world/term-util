@@ -19,12 +19,15 @@ class Wind(Inexhaustible):
         sweep_area = math.pi * self.blade_size ** 2
         self.power = (.5 * 1.23 * self.CLIMATE.wind_speed ** 3 * sweep_area) / 1000
         self.generation(type = "Wind")
-        sleep(1)
+        sleep(1 + self.blade_size / 100)
 
 class Solar(Inexhaustible):
 
     def __init__(self):
         super().__init__()
+        if self.wattage not in [250, 300, 350, 400]:
+            print("Panel not in approved sizes.")
+            exit()
         self.__calc_wattage()
     
     def __calc_wattage(self):
