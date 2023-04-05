@@ -38,7 +38,9 @@ class Solar(Inexhaustible):
         self.__calc_wattage()
 
     def __calc_wattage(self):
+        if not self.CLIMATE.sunny:
+            self.wattage = 0
         self.power = (self.wattage * .016) / 1000
         self.generation(type = "Solar")
-        with CONSOLE.status("Generating solar power...", spinner = "weather"):
+        with CONSOLE.status("Generating solar power...", spinner = "moon"):
             sleep(1)
