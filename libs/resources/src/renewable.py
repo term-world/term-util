@@ -62,6 +62,11 @@ class Water(Inexhaustible):
 
     def __init__(self):
         super().__init__()
+        if self.pipe_radius > 3:
+            print("""
+That's a bit too big of a pipe! There's not that much space in term-world!
+            """)
+            exit()
         self.__calc_flow()
 
     def __has_water(self) -> bool:
@@ -69,10 +74,10 @@ class Water(Inexhaustible):
             data = json.load(water_level)
         if data["level"] < self.flow_rate:
             print("""
-                You may ask yourself "well, how did I get here?"
-                And you may ask yourself "how do I work this?"
-                And you may ask yourself "where did all the water go?"
-                And You may ask yourself "My God! What have I done?"
+You may ask yourself "well, how did I get here?"
+And you may ask yourself "how do I work this?"
+And you may ask yourself "where did all the water go?"
+And You may ask yourself "My God! What have I done?"
             """)
             return False
         self.data = data
@@ -86,7 +91,8 @@ class Water(Inexhaustible):
         velocity = coeff * (1 / self.pipe_radius) ** 0.63
         velocity *= (1 / self.pipe_length ** 0.54)
         # Convert velocity to flow rate
-        self.flow_rate = (math.pi * self.pipe_radius ** 2) * velocity
+        if not self.flow_rate:
+            self.flow_rate = (math.pi * self.pipe_radius ** 2) * velocity
         # Multiply by common efficiency averages
         self.power = (self.pipe_length * self.flow_rate * (.18 * .50)) / 1000
         with CONSOLE.status("Water flowing underground...", spinner = "water"):
