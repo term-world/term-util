@@ -5,6 +5,7 @@ from time import sleep
 from .types import Inexhaustible
 
 from rich.console import Console
+from rich.spinner import SPINNERS
 
 CONSOLE = Console()
 
@@ -44,3 +45,59 @@ class Solar(Inexhaustible):
         self.generation(type = "Solar")
         with CONSOLE.status("Generating solar power...", spinner = "moon"):
             sleep(1)
+
+class Water(Inexhaustible):
+
+    # TODO: Make a couple of pipe opportunities available?
+    flow_rate = 0
+    pipe_radius = 0
+    pipe_length = 100
+
+    wave = {
+        "interval": 200,
+        "frames": ["🌊  "," 🌊 ", "  🌊"]
+    }
+
+    SPINNERS.update({"water": wave})
+
+    def __init__(self):
+        super().__init__()
+        if self.pipe_radius > 3:
+            print("""
+That's a bit too big of a pipe! There's not that much space in term-world!
+            """)
+            exit()
+        self.__calc_flow()
+
+    def __has_water(self) -> bool:
+        with open("/world/reservoir", "r") as water_level:
+            data = json.load(water_level)
+        if data["level"] < self.flow_rate:
+            print("""
+You may ask yourself "well, how did I get here?"
+And you may ask yourself "how do I work this?"
+And you may ask yourself "where did all the water go?"
+And You may ask yourself "My God! What have I done?"
+            """)
+            return False
+        self.data = data
+        return True
+
+    def __calc_flow(self):
+        if not self.__has_water():
+            exit()
+        # Assumes 1 foot "drop" over run of the pipe
+        coeff = 1.318 * 120
+        velocity = coeff * (1 / self.pipe_radius) ** 0.63
+        velocity *= (1 / self.pipe_length ** 0.54)
+        # Convert velocity to flow rate
+        if not self.flow_rate:
+            self.flow_rate = (math.pi * self.pipe_radius ** 2) * velocity
+        # Multiply by common efficiency averages
+        self.power = (self.pipe_length * self.flow_rate * (.18 * .50)) / 1000
+        with CONSOLE.status("Water flowing underground...", spinner = "water"):
+            sleep(1)
+        # Remove from reservoir?
+        self.data["level"] -= self.flow_rate
+        with open("/world/reservoir", "w") as water_level:
+            json.dump(self.data, water_level)
