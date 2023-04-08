@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 jobs: 
-  protect_branch:
+  "Protect Branch":
     runs-on: ubuntu-latest
     steps:
     - name: Arborist
@@ -15,6 +15,6 @@ jobs:
         branches: '["main"]'
         min-approvals: 1
         enforce-admins: false
-        force: true
+        force-protect: true
     env:
       GITHUB_TOKEN: ${{ secrets.ARBORIST }}
