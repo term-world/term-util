@@ -1,0 +1,13 @@
+#!/bin/sh
+
+cd libs
+DIRS=$(find * -maxdepth 0 -type d)
+
+PYTHON=$(which python)
+
+for DIR in $DIRS; do
+    cd $DIR
+    echo "INSTALLING $DIR..."
+    $($PYTHON -m pip install .)
+    cd ..
+done
