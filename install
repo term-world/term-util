@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 cd libs
 DIRS=$(find * -maxdepth 0 -type d)
@@ -7,7 +7,16 @@ PYTHON=$(which python)
 
 for DIR in $DIRS; do
     cd $DIR
-    echo "INSTALLING $DIR..."
-    $($PYTHON -m pip install .)
+
+    if [[ $* == *--uninstall* ]]; then
+        echo "UNINSTALLING $DIR"
+        $($PYTHON -m pip uninstall .)
+    fi
+
+    if [[ $* != *--uninstall* ]]; then
+        echo "INSTALLING $DIR..."
+        $($PYTHON -m pip install .)
+    fi
+
     cd ..
 done
