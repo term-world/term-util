@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 jobs: 
-  "Protect Branch":
+  Protect:
     runs-on: ubuntu-latest
     steps:
     - name: Arborist
