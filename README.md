@@ -26,7 +26,13 @@ from the list of choices
 
 ### Unix
 
-`curl -fsSL https://raw.githubusercontent.com/term-world/term-util/main/install | sh`
+#### Install
+
+`curl -fsSL https://raw.githubusercontent.com/term-world/term-util/main/install | bash`
+
+#### Uninstall
+
+`curl -fsSL https://raw.githubusercontent.com/term-world/term-util/main/install | bash - --uninstall`
 
 ## Contributing
 
