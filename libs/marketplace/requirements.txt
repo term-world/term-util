@@ -1,0 +1,2 @@
+couchsurf==0.3
+inventory==0.2
