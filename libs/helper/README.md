@@ -10,14 +10,19 @@ Contrary to other `term-util` libraries, `helper` installs as a `CLI` interface.
 integrated into other files and/or assignments where necessary:
 
 ```python
-import helper
+from helper import Helper
 
 cliv3 = Helper()
 
-# To implement chat:
+# To implement a chat loop:
 cliv3.chat()
 
-# To send a scripted question:
+# To send a scripted question and avoid the chat loop:
 cliv3.query("What is the meaning of life?")
 ```
 
+To use the `helper` once installed, call it up using its name:
+
+```bash
+dluman@term-world:$ helper
+```
