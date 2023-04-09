@@ -27,12 +27,13 @@ This lists the status of a user's world inventory and other facts about the item
 
 ```
                            dluman's inventory
-┏━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━┓
-┃ Item name  ┃ Item count ┃ Item file     ┃ Consumable ┃ Volume ┃
-┡━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━┩
-│ Fertilizer │ 1          │ Fertilizer.py │ True       │ 1      │
-└────────────┴────────────┴───────────────┴────────────┴────────┘
-Your current total volume limit is: 1/10
+                           dluman's inventory
+┏━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Item name  ┃ Item count ┃ Item file  ┃ Consumable ┃ Volume ┃
+┡━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━┩
+│ Fertilizer │ 1          │ Fertilizer.py │ True       │ 1       │
+└────────────┴────────────┴───────────────┴────────────┴─────────┘
+Your current total volume limit is: 1/10Your current total volume limit is: 1/10
 ```
 
 ### Types of items in the world
@@ -64,4 +65,7 @@ To use the `LettuceSeed.py` file, the user should:
 
 ```bash
 dluman@term-world:~$ use LettuceSeed
+You try the LettuceSeed, but it doesn't do anything.
 ```
+
+If items have effects, these effects will happen when the item is used. The above does..._nothing_.
