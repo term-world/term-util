@@ -22,7 +22,7 @@ libraries in more detail.
 
 Each library contains an individual `setup.py` file for installing libraries
 piecemeal. To install all libraries at once, copy and paste the following command
-from the list of choices
+from the list of choices:
 
 ### Unix
 
