@@ -29,22 +29,10 @@ To do this:
 1. create a virtual environment at a known location (such as `~/venv`)
 2. activate that environment: `source ~/venv/bin/activate`
 3. `cd` to the appropriate library folder in `libs/`
-4. type `python setup.py develop` to install a development version of the library
+4. type `python -m pip install -e .` to install a development version of the library
 
-### Universal installer
-
-To install all libraries at once, copy and paste the following command
-from the list of choices:
-
-### Unix
-
-#### Install
-
-`curl -fsSL https://raw.githubusercontent.com/term-world/term-util/main/install | bash`
-
-#### Uninstall
-
-`curl -fsSL https://raw.githubusercontent.com/term-world/term-util/main/install | bash - --uninstall`
+You can then edit the source files for the library without having to reinstall
+a version each time to test it.
 
 ## Contributing
 
