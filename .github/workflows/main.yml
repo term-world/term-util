@@ -5,15 +5,16 @@ on:
     branches: [main]
 
 jobs: 
-  protect_branch:
+  Protect:
     runs-on: ubuntu-latest
     steps:
     - name: Arborist
       id: arborist
-      uses: term-world/arborist@v0.1.0
+      uses: term-world/arborist@v0.1.5
       with:
         branches: '["main"]'
         min-approvals: 1
         enforce-admins: false
+        force-protect: true
     env:
       GITHUB_TOKEN: ${{ secrets.ARBORIST }}
