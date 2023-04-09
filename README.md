@@ -21,7 +21,19 @@ libraries in more detail.
 ## Installing libraries
 
 Each library contains an individual `setup.py` file for installing libraries
-piecemeal. To install all libraries at once, copy and paste the following command
+piecemeal. If intending to contribute to `term-util`, we recommend installing
+libraries in this way using a virtual environment.
+
+To do this:
+
+1. create a virtual environment at a known location (such as `~/venv`)
+2. activate that environment: `source ~/venv/bin/activate`
+3. `cd` to the appropriate library folder in `libs/`
+4. type `python setup.py develop` to install a development version of the library
+
+### Universal installer
+
+To install all libraries at once, copy and paste the following command
 from the list of choices:
 
 ### Unix

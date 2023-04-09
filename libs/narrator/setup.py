@@ -4,7 +4,6 @@ setuptools.setup(
     name="narrator",
     version="0.1",
     packages=['narrator'],
-    package_dir={'narrator': 'src'},
     include_package_data=True,
     description='Global inventory system governing all items in term-world.',
     long_description=open('README.md', 'r').read(),
