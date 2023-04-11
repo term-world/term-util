@@ -81,19 +81,25 @@ class Listing:
             lib_name = self.library.lib_name,
             owners = self.library.owners
         ).result.enumerate()
+        matches = list(matches)
 
-        # If there is a match, set self.library to the data
-        if len(list(matches)):
-            # If multiple, let the user decide
-            self.library = Library(**match)
-            self.versions = len(self.library.versions)
-        else:
-            # If no matches, we can assume this is a new library
-            self.library._id = self.conn.request.get_new_id()
+        while True:
+            # If there is a match, set self.library to the data
+            if len(matches):
+                # If multiple, let the user decide
+                self.library = Library(**matches[-1])
+                self.versions = len(self.library.versions)
+            else:
+                # If no matches, we can assume this is a new library
+                self.library._id = self.conn.request.get_new_id()
 
-        # Ask if user wants to make alteration
-        choice = input(f"Add a v{len(self.library.versions) + 1} to the {self.name} library [Y/N]? ")
-        if choice.lower() == "n": exit()
+            # Ask if user wants to make alteration
+            choice = input(f"Add a v{len(self.library.versions) + 1} to the {self.name} library [Y/N]? ")
+            if choice.lower() == "n" and len(matches):
+                matches.pop()
+            if not len(matches): exit()
+            break
+
         # Make a new version
         self.version = self.make_version()
         # Update library with new version?
