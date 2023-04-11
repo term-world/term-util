@@ -82,30 +82,29 @@ class Listing:
             owners = self.library.owners
         ).result.enumerate()
 
-        # If there are matches, set self.library to the data
-        for match in matches:
-            if match:
-                # If multiple, let the user decide
-                self.library = Library(**match)
-                self.versions = len(self.library.versions)
-            else:
-                # If no matches, we can assume this is a new library
-                self.library._id = self.conn.request.get_new_id()
+        # If there is a match, set self.library to the data
+        if len(list(matches)):
+            # If multiple, let the user decide
+            self.library = Library(**match)
+            self.versions = len(self.library.versions)
+        else:
+            # If no matches, we can assume this is a new library
+            self.library._id = self.conn.request.get_new_id()
 
-            # Ask if user wants to make alteration
-            choice = input(f"Add a v{len(self.library.versions) + 1} to the {self.name} library [Y/N]? ")
-            if choice.lower() == "n": exit()
-            # Make a new version
-            self.version = self.make_version()
-            # Update library with new version?
-            self.library.add_version(
-                v_no = self.version.version,
-                v_id = self.version._id
-            )
+        # Ask if user wants to make alteration
+        choice = input(f"Add a v{len(self.library.versions) + 1} to the {self.name} library [Y/N]? ")
+        if choice.lower() == "n": exit()
+        # Make a new version
+        self.version = self.make_version()
+        # Update library with new version?
+        self.library.add_version(
+            v_no = self.version.version,
+            v_id = self.version._id
+        )
 
-            # Put entries in database
-            self.make_db_entry(self.library)
-            self.make_db_entry(self.version, attachment = self.name)
+        # Put entries in database
+        self.make_db_entry(self.library)
+        self.make_db_entry(self.version, attachment = self.name)
 
     def yank(self, name: str = "") -> None:
         """ Yanks (deletes) a library or version owned by requesting user """
