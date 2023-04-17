@@ -101,7 +101,6 @@ class Factory:
             filepath = os.path.expanduser(
                 Config.values["INV_PATH"]
             )
-        print(filepath, template)
         spec = util.spec_from_file_location(
             template,
             f"{filepath}/{template}"
