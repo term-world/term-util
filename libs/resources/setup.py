@@ -1,11 +1,11 @@
 import setuptools
 
 setuptools.setup(
-    name="worldlib",
+    name="resources",
     version="0.1",
-    packages=['worldlib'],
+    packages=['resources'],
     include_package_data=True,
-    description='Shorthand import for all world-specific libraries for term-world narrative objects.',
+    description='Global resource pool for term-world resources',
     long_description=open('README.md', 'r').read(),
     install_requires=[line.strip() for line in open('requirements.txt', 'r').readlines()]
  )

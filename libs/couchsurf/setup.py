@@ -4,7 +4,6 @@ setuptools.setup(
     name="couchsurf",
     version="0.3",
     packages=['couchsurf'],
-    package_dir={'couchsurf': 'src'},
     include_package_data=True,
     description='Limited API for basic CouchDB operations.',
     long_description=open('README.md', 'r').read(),

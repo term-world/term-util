@@ -95,13 +95,15 @@ class Factory:
     def load_template(self, template: str = ""):
         if not template:
             return Template
-        template = template.split(".py")[0]
-        inv_path = os.path.expanduser(
-            Config.values["INV_PATH"]
-        )
+        filepath = os.path.dirname(template)
+        template = os.path.basename(template)
+        if not filepath:
+            filepath = os.path.expanduser(
+                Config.values["INV_PATH"]
+            )
         spec = util.spec_from_file_location(
             template,
-            f"{inv_path}/{template}.py"
+            f"{filepath}/{template}"
         )
         mod = util.module_from_spec(spec)
         return mod
