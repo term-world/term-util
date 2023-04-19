@@ -16,9 +16,9 @@ class PowerGrid:
 
         #make an if statement to keep from going to 0
     def use_power(power):
-        with open("worldbattery.json", "r") as fh:
+        with open("../term-util-power-planters/libs/resources/resources/worldbattery.json", "r") as fh:
             world_battery = json.load(fh)
             world_battery["power"] -= power
-        with open("worldbattery.json", "w") as add_battery:
+        with open("../term-util-power-planters/libs/resources/resources/worldbattery.json", "w") as add_battery:
             json.dump(world_battery, add_battery)
 
