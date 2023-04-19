@@ -12,14 +12,14 @@ class PowerGrid:
             world_battery["power"] += oil
             world_battery["power"] += nuclear
             world_battery["power"] += natural_gass
-        with open("worldbattery", "w") as add_battery:
+        with open("worldbattery.json", "w") as add_battery:
             json.dump(world_battery, add_battery)
 
         #make an if statement to keep from going to 0
     def use_power(power):
-        with open("worldbattery", "r") as fh:
+        with open("../term-util-power-planters/libs/resources/resources/worldbattery.json", "r") as fh:
             world_battery = json.load(fh)
             world_battery["power"] -= power
-        with open("worldbattery", "w") as add_battery:
+        with open("../term-util-power-planters/libs/resources/resources/worldbattery.json", "w") as add_battery:
             json.dump(world_battery, add_battery)
 
