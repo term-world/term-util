@@ -1,6 +1,8 @@
 import os
 import openai
+import json
 
+# as of rn, rich is not needed 
 from rich.live import Live
 from rich.console import Console
 from rich.markdown import Markdown
@@ -41,6 +43,7 @@ class Helper:
         self.offset = 0
 
     def parse_stream(self, responses: dict = {}) -> str:
+        """ generates an object Helper.parse_stream which includes the """
         for chunk in responses:
             try:
                 msg = chunk["choices"][0]["delta"]["content"]
@@ -49,33 +52,36 @@ class Helper:
                 pass
 
     def parse_blob(self, responses: dict = {}) -> str:
+        """ don't think this is actually needed """
         for choice in responses["choices"]:
             return choice["message"]["content"].strip()
 
     def render(self, response: str = "") -> None:
+        self.console.clear()
         markdown = Markdown('\r' + response)
         self.console.print(markdown, soft_wrap = False, end = '\r')
 
     def query(self,question: str = "") -> str:
-        with self.console.status("Waiting for response...", spinner = "clock"):
-            PROMPTS.append(
-                {"role": "user", "content": question}
+        PROMPTS.append(
+            {"role": "user", "content": question}
             )
-            responses = openai.ChatCompletion.create(
-                model = "gpt-4",
-                messages = PROMPTS,
-                temperature = 0.1,
-                stream = False,
-                n = 1
+        # adds question (from user input) to PROMPTS
+        responses = openai.ChatCompletion.create(
+            model= "gpt-4",
+            messages= PROMPTS,
+            max_tokens= 100,
+            temperature= 0.1,
+            stream = True,
+            n= 1
             )
-            response = self.parse_blob(responses)
-            self.render(response)
-
-    def motd(self) -> None:
-        self.render(msg)
+        response = self.parse_stream(responses)
+        for word in response:
+            # get the content out of response and print that 
+            PROMPTS.append(word)
+            if self.parse_stream():
+                print(word, end="", flush=True)
 
     def chat(self) -> None:
-        self.motd()
         while True:
             question = input("🤖 CLIV3: What Python topic would you like to ask about? ")
             if question.lower() == "q":
@@ -84,5 +90,7 @@ class Helper:
             self.query(question)
 
 def main():
+    print("")
+    print(" --- press Q at any time to quit ---", end = "\n")
     cliv3 = Helper()
     cliv3.chat()
