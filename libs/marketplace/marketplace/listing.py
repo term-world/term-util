@@ -97,7 +97,9 @@ class Listing:
             choice = input(f"Add a v{len(self.library.versions) + 1} to the {self.name} library [Y/N]? ")
             if choice.lower() == "n" and len(matches):
                 matches.pop()
-            if not len(matches): exit()
+            elif choice.lower() == "n" or not len(matches):
+                print("Quitting!")
+                exit()
             break
 
         # Make a new version

@@ -72,6 +72,18 @@ class Request:
         result = self.post(query, "_find")
         return result
 
+    def download(self, endpoint: str = "") -> bytes:
+        filebytes = []
+        response = requests.get(
+            f'http://{self.auth}/{self.name}/{endpoint}',
+            headers = self.headers,
+            stream = True
+        )
+        for chunk in response.iter_content(chunk_size = 1024):
+            if chunk:
+                filebytes.append(chunk)
+        return b''.join(filebytes)
+
     def put(self, doc_id: str = "", doc: dict = {}, **kwargs) -> dict:
         request_uri = f'http://{self.auth}/{self.name}/{doc_id}'
         response = requests.put(
@@ -82,20 +94,14 @@ class Request:
         confirmation = json.loads(response.text)
         if "attachment" in kwargs:
             with open(kwargs["attachment"], 'rb') as fh:
-                updated_doc["_attachments"] = {
-                    f'{kwargs["attachment"]}': {
-                        "data": base64.b64encode(
-                            fh.read()
-                        ).decode('utf-8')
-                    }
-                }
+                data = fh.read()
             request_uri += f'/{kwargs["attachment"]}'
             self.headers["If-Match"] = confirmation["rev"]
             self.headers["Content-Type"] = "application/zip"
             response = requests.put(
                 request_uri,
                 headers = self.headers,
-                data = json.dumps(updated_doc["_attachments"][kwargs["attachment"]]["data"])
+                data = data
             )
             confirmation = json.loads(response.text)
         return confirmation
