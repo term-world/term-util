@@ -69,7 +69,6 @@ class Helper:
         responses = openai.ChatCompletion.create(
             model= "gpt-4",
             messages= PROMPTS,
-            max_tokens= 100,
             temperature= 0.1,
             stream = True,
             n= 1
@@ -77,12 +76,14 @@ class Helper:
         response = self.parse_stream(responses)
         for word in response:
             # get the content out of response and print that 
-            PROMPTS.append(word)
+            # PROMPTS.append(word)
             if self.parse_stream():
                 print(word, end="", flush=True)
 
     def chat(self) -> None:
         while True:
+            print()
+            print()
             question = input("🤖 CLIV3: What Python topic would you like to ask about? ")
             if question.lower() == "q":
                 print("🤖 CLIV3: Goodbyte!")
@@ -90,7 +91,8 @@ class Helper:
             self.query(question)
 
 def main():
-    print("")
+    print()
+    print()
     print(" --- press Q at any time to quit ---", end = "\n")
     cliv3 = Helper()
     cliv3.chat()
