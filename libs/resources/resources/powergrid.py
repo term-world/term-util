@@ -17,10 +17,13 @@ class PowerGrid:
     def use_power(power):
         with open("../term-util-power-planters/libs/resources/resources/worldbattery.json", "r") as fh:
             world_battery = json.load(fh)
-        if world_battery["power"] >= power:
-            world_battery["power"] -= power
-        else:
+        if world_battery["renewable_energy"] >= power:
+            world_battery["renewable_energy"] -= power
+        elif world_battery["exhaustable_energy"] >= power:
+            world_battery["exhaustable_energy"] -= power
+        elif world_battery["renewable_energy"] < power and world_battery["echaustable_energy"] < power:
             print("There It Not Enough Power In The World To Run This! ")
+            
         with open("../term-util-power-planters/libs/resources/resources/worldbattery.json", "w") as add_battery:
             json.dump(world_battery, add_battery)
 
