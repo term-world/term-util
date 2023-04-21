@@ -90,16 +90,27 @@ class Helper:
 
     def chat(self) -> None:
         self.motd()
+        print("1. Question")
+        print("2. Code")
+        print("0. Exit")
         while True:
             print()
             print()
-            question = input("🤖 CLIV3: What Python topic would you like to ask about? ")
-            if question.lower() == "q":
+            # question = input("🤖 CLIV3: What Python topic would you like to ask about? ")
+            response = int(input("Choose an option by number: "))
+            # if question.lower() == "q":
+            #     print("🤖 CLIV3: Goodbyte!")
+            #     break
+            if response == 1:
+                question = input("🤖 CLIV3: What Python topic would you like to ask about? ")
+                self.query(question)
+            if response == 0:
                 print("🤖 CLIV3: Goodbyte!")
                 break
-            self.query(question)
+            
 
 def main():
     print()
     cliv3 = Helper()
     cliv3.chat()
+    
