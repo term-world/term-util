@@ -79,13 +79,17 @@ class Helper:
             if self.parse_stream():
                 print(word, end="", flush=True)
                 words = words + word
+        self.console.clear()
         markdown = Markdown('\t' + words)
         print()
         # print(words)        
         self.console.print(markdown, soft_wrap=False, end='')
                 
+    def motd(self) -> None:
+        self.render(msg)
 
     def chat(self) -> None:
+        self.motd()
         while True:
             print()
             print()
@@ -97,7 +101,5 @@ class Helper:
 
 def main():
     print()
-    print()
-    print(" --- press Q at any time to quit ---", end = "\n")
     cliv3 = Helper()
     cliv3.chat()
