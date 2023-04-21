@@ -106,8 +106,7 @@ class Helper:
                 self.query(question)
             if response == 0:
                 print("🤖 CLIV3: Goodbyte!")
-                break
-            
+                break    
 
 def main():
     print()
