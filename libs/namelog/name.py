@@ -3,26 +3,36 @@ import getpass
 from datetime import datetime
 import time
 
-def now() -> float:
-    """Returns a float is the time _right now_"""
-    return datetime.now().timestamp()
+class User_Log
 
-# variable user _GETS_ the output of the 
-# getpass _module_'s getuser _method_.
+    def now() -> float:
+        """Returns a float is the time _right now_"""
+        return datetime.now().timestamp()
 
-user = getpass.getuser()
-# create users list to add individual users
+    #Converts Epoch time to Date format
+    local_time = time.ctime(now())
 
-users = []
 
-users.append({"user": user, "time": now()})
-if users == user:
-    then users + user
+    # variable user _GETS_ the output of the 
+    # getpass _module_'s getuser _method_.
 
-# save the list as a file
+    user = getpass.getuser()
+    # create users list to add individual users
 
-with open("UserHistory.json", "w") as fh:
-    json.dump(users, fh)
+    users = []
+
+
+
+    users.append({"user": user, "time": local_time})
+
+
+    # save the list as a file
+
+
+    with open("UserHistory.json", "a") as fh:
+        json.dump(users, fh)
+
+
 
 """
 def load_file(UserHistory: str = "") -> dict:
