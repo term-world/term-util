@@ -3,7 +3,7 @@ import getpass
 from datetime import datetime
 import time
 
-class User_Log
+class User_Log:
 
     def now() -> float:
         """Returns a float is the time _right now_"""
