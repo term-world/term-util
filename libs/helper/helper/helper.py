@@ -2,7 +2,6 @@ import os
 import openai
 import json
 
-# as of rn, rich is not needed 
 from rich.live import Live
 from rich.console import Console
 from rich.markdown import Markdown
@@ -43,11 +42,11 @@ class Helper:
         self.offset = 0
 
     def parse_stream(self, responses: dict = {}) -> str:
-        """ generates an object Helper.parse_stream which includes the """
+        """ this is a generator """
         for chunk in responses:
             try:
                 msg = chunk["choices"][0]["delta"]["content"]
-                yield msg
+                yield msg  
             except KeyError:
                 pass
 
@@ -57,7 +56,6 @@ class Helper:
             return choice["message"]["content"].strip()
 
     def render(self, response: str = "") -> None:
-        self.console.clear()
         markdown = Markdown('\r' + response)
         self.console.print(markdown, soft_wrap = False, end = '\r')
 
@@ -73,12 +71,19 @@ class Helper:
             stream = True,
             n= 1
             )
+        words = ""
         response = self.parse_stream(responses)
         for word in response:
             # get the content out of response and print that 
             # PROMPTS.append(word)
             if self.parse_stream():
                 print(word, end="", flush=True)
+                words = words + word
+        markdown = Markdown('\t' + words)
+        print()
+        # print(words)        
+        self.console.print(markdown, soft_wrap=False, end='')
+                
 
     def chat(self) -> None:
         while True:
