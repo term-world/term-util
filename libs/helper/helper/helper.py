@@ -11,7 +11,9 @@ from rich.style import Style
 from .motd import *
 from .spinner import SpinThread
 
-from time import sleep
+from time import sleep 
+
+from .modes import Example, Review
 
 # new file, 2 modes one python questions one code review, can have 2 classes in one file
 # from .modes import MODE 1, MODE 2
@@ -22,22 +24,29 @@ API = {
     "org": os.getenv("OPEN_AI_ORG")
 }
 
-SYSTEM = """You are a civil servant named cliv3 who teaches the Python programming language.
+# PROMPTS = [
+#      {"role": "system", "content": SYSTEM}
+# ]
 
-Town residents will ask for help with specific Python commands, and your job is to respond with kind,
-helpful messages with examples that relate to various town services such as bodega, datamart, woodshop, voting, 
-hall of records, datamart, water supply, the power grid, trash collection, or proper lawn care.
+# openai.api_key = API["key"]
+# openai.api_org = API["org"]
 
-If residents are rude to you, politely tell them they need to be kind and that you've reported them
-to the town mayor and refuse to answer the question, suggesting that they be a bit more neighborly.
-"""
+# SYSTEM = """You are a civil servant named cliv3 who teaches the Python programming language.
 
-PROMPTS = [
-    {"role": "system", "content": SYSTEM}
-]
+# Town residents will ask for help with specific Python commands, and your job is to respond with kind,
+# helpful messages with examples that relate to various town services such as bodega, datamart, woodshop, voting, 
+# hall of records, datamart, water supply, the power grid, trash collection, or proper lawn care.
 
-openai.api_key = API["key"]
-openai.api_org = API["org"]
+# If residents are rude to you, politely tell them they need to be kind and that you've reported them
+# to the town mayor and refuse to answer the question, suggesting that they be a bit more neighborly.
+# """
+
+# PROMPTS = [
+#     {"role": "system", "content": SYSTEM}
+# ]
+
+# openai.api_key = API["key"]
+# openai.api_org = API["org"]
 
 class Helper:
 
@@ -64,31 +73,31 @@ class Helper:
         markdown = Markdown('\r' + response)
         self.console.print(markdown, soft_wrap = False, end = '\r')
 
-    def query(self,question: str = "") -> str:
-        PROMPTS.append(
-            {"role": "user", "content": question}
-            )
-        # adds question (from user input) to PROMPTS
-        responses = openai.ChatCompletion.create(
-            model= "gpt-4",
-            messages= PROMPTS,
-            temperature= 0.1,
-            stream = True,
-            n= 1
-            )
-        words = ""
-        response = self.parse_stream(responses)
-        for word in response:
-            # get the content out of response and print that 
-            # PROMPTS.append(word)
-            if self.parse_stream():
-                print(word, end="", flush=True)
-                words = words + word
-        self.console.clear()
-        markdown = Markdown('\t' + words)
-        print()
-        # print(words)        
-        self.console.print(markdown, soft_wrap=False, end='')
+    # def query(self,question: str = "") -> str:
+    #     PROMPTS.append(
+    #         {"role": "user", "content": question}
+    #         )
+    #     # adds question (from user input) to PROMPTS
+    #     responses = openai.ChatCompletion.create(
+    #         model= "gpt-4",
+    #         messages= PROMPTS,
+    #         temperature= 0.1,
+    #         stream = True,
+    #         n= 1
+    #         )
+    #     words = ""
+    #     response = self.parse_stream(responses)
+    #     for word in response:
+    #         # get the content out of response and print that 
+    #         # PROMPTS.append(word)
+    #         if self.parse_stream():
+    #             print(word, end="", flush=True)
+    #             words = words + word
+    #     self.console.clear()
+    #     markdown = Markdown('\t' + words)
+    #     print()
+    #     # print(words)        
+    #     self.console.print(markdown, soft_wrap=False, end='')
                 
     def motd(self) -> None:
         self.render(msg)
@@ -109,10 +118,12 @@ class Helper:
             #     break
             if response == 1:
                 question = input("🤖 CLIV3: What Python topic would you like to ask about? ")
-                self.query(question)
+                cliv3_example = Example()
+            # if response == 2:
+                
             if response == 0:
                 print("🤖 CLIV3: Goodbyte!")
-                break    
+                break  
 
 def main():
     print()
