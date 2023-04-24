@@ -7,10 +7,15 @@ from rich.console import Console
 from rich.markdown import Markdown
 from rich.style import Style
 
+                # * means all
 from .motd import *
 from .spinner import SpinThread
 
 from time import sleep
+
+# new file, 2 modes one python questions one code review, can have 2 classes in one file
+# from .modes import MODE 1, MODE 2
+# move Classes code to new file called "modes", import stuff from modes into helper.py
 
 API = {
     "key": os.getenv("OPEN_AI_KEY"),
@@ -90,14 +95,15 @@ class Helper:
 
     def chat(self) -> None:
         self.motd()
-        print("1. Question")
-        print("2. Code")
-        print("0. Exit")
+        # print("1. Question")
+        # print("2. Code")
+        # print("0. Exit")
         while True:
             print()
             print()
-            # question = input("🤖 CLIV3: What Python topic would you like to ask about? ")
             response = int(input("Choose an option by number: "))
+            print()
+            # question = input("🤖 CLIV3: What Python topic would you like to ask about? ")
             # if question.lower() == "q":
             #     print("🤖 CLIV3: Goodbyte!")
             #     break
