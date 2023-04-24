@@ -1,6 +1,11 @@
 import json
+import sys
+import os
+import resources
 
 class PowerGrid:
+
+    path = os.path.dirname(resources.__file__)
 
     def add_power(wind = 0, solar = 0, coal = 0, oil = 0, nuclear = 0, natural_gass = 0):
         #more generalizable way to do this path
@@ -21,9 +26,10 @@ class PowerGrid:
             world_battery["renewable_energy"] -= power
         elif world_battery["exhaustable_energy"] >= power:
             world_battery["exhaustable_energy"] -= power
-        elif world_battery["renewable_energy"] < power and world_battery["echaustable_energy"] < power:
-            print("There It Not Enough Power In The World To Run This! ")
-            
+        elif world_battery["renewable_energy"] < power and world_battery["exhaustable_energy"] < power:
+            print("There Is Not Enough Power In The World To Run This! ")
+            sys.exit()
+             
         with open("../term-util-power-planters/libs/resources/resources/worldbattery.json", "w") as add_battery:
             json.dump(world_battery, add_battery)
 
