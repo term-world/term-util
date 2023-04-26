@@ -13,6 +13,8 @@ from .spinner import SpinThread
 
 from time import sleep
 
+from helper import Helper
+
 class Example(Helper):
 
     API = {
