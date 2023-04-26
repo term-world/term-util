@@ -109,17 +109,24 @@ class Helper:
                 else:
                     print(f"Please choose a file in the current directory")
                     break
+            if file_name.lower() == "q":
+                self.chat()
+                break
+                
+                
+                
+
 
     def chat(self) -> None:
         self.motd()
         while True:
             print()
             print()
-            response = int(input("Choose an option by number: "))
             print()
             question = input("🤖 CLIV3: What Python topic would you like to ask about? ")
             if question == "code review":
                 self.read_file()
+                return
             if question.lower() == "q":
                 print("🤖 CLIV3: Goodbyte!")
                 break
