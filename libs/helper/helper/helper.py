@@ -96,7 +96,7 @@ class Helper:
 
     def read_file(self) -> None:
         print()        
-        if True:
+        while True:
             # loop through current directory
             print(os.listdir('./'))
             print()
