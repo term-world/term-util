@@ -89,70 +89,26 @@ class Helper:
         self.render(msg)
 
     def read_file(self) -> None:
-        print()
-        folder_name = input("What is the folder name? ")
-        file_name = input("What is the file name? ")
-        file_path = os.path.join(folder_name, file_name)
-        file_exist = os.path.exists(file_path)
-
-        # root_dir = folder_name
-        # for dir_path, dir_names, file_names in os.walk(root_dir):
-        #     for name in file_names:
-        #         new_path = os.path.join(root, name)
-
-        while file_exist == False:
-            ''' if file not in folder then add subfolder to file path '''
-            try:
-                inputs = [folder_name, file_name]
-                sub_folder = input("What is the subfolder name? ")
-                add_input = inputs.append(sub_folder)
-                new_path = str(input + ',')
-                file_paths = os.path.join(new_path)
-                file_exists = os.path.exists(file_paths)
-                dir_exists = os.path.isdir(sub_folder)
-                is_file = os.path.isfile(file_paths)
-                with open(file_paths, 'r') as file:
-                    content = file.read()
-                    self.query(content)
-                    self.console(clear)
-                    markdown = Markdown('\t' + content)
-                    self.console.print(markdown)
-            except:
-                """ currently only allows for one subfolder input, otherwise user recieves below error """
-                print(f"It looks like '{file_name}' does not exist in '{folder_name}' or '{sub_folder}'")
-                break 
-
-            #     folder_input = input("What is the subfolder name? ")
-            #     new_path = str(folder_input) + ' ,'
-            #     file_pathss = os.path.join(folder_name, sub_folder, subb_folder, file_name)
-            #     file_exists = os.path.exists(file_pathss)
-            #     dir_exists = os.path.isdir(subb_folder)
-            #     is_file = os.path.isfile(file_pathss)
-            #     with open(file_pathss, 'r') as file:
-            #         content = file.read()
-            #         self.query(content)
-            #         self.console(clear)
-            #         markdown = Markdown('\t' + content)
-            #         self.console.print(markdown)
-        
-        else: 
-            with open(file_path, 'r') as file:
-                content = file.read() 
-                self.query(content) 
-                self.console.clear()
-                markdown = Markdown('\t' + content)
-                self.console.print(markdown)
-        # folder_files = os.listdir(folder_name)
-        # print(folder_files)
-        # if folder
-        #     file_name = input("What is the file name? ")
-        #     file_path = os.path.join(folder_name, file_name)
-        #     with open(file_path, 'r') as file:
-        #         content = file.read()
-        #         self.query(content)
-        #         self.console(clear)
-        #         markdown = Markdown('\t' + content)
-        #         self.console.print(markdown)
+        print()        
+        while True:
+        # loop through current directory
+            print()
+            print(os.listdir('./'))
+            for root, dirs, files in os.walk('./'):
+                file_name = input("What is the file name? ")
+                file_path = os.path.join('./', file_name)
+                file_exist = os.path.exists(file_path)
+                if file_exist == True:
+                        with open(file_path, 'r') as file:
+                            content = file.read()
+                            self.query(content)
+                            self.console.clear()
+                            markdown = Markdown('\t' + content)
+                            self.console.print(markdown)
+                            break
+                else:
+                    print(f"Please choose a file in the current directory")
+                    break
 
     def chat(self) -> None:
         self.motd()
