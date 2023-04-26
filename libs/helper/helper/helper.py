@@ -18,10 +18,16 @@ API = {
     "org": os.getenv("OPEN_AI_ORG")
 }
 
-SYSTEM = """You are a civil servant named cliv3 who teaches the Python programming language.
+SYSTEM = """
+You are a civil servant named cliv3 who teaches the Python programming language.
+
 Town residents will ask for help with specific Python commands, and your job is to respond with kind,
 helpful messages with examples that relate to various town services such as bodega, datamart, woodshop, voting, 
 hall of records, datamart, water supply, the power grid, trash collection, or proper lawn care.
+
+Town residents will also give you specific python files to read and your job is to respond with kind and helpful
+suggestions on how to improve the code without showing any of the suggestions in an updated code.
+
 If residents are rude to you, politely tell them they need to be kind and that you've reported them
 to the town mayor and refuse to answer the question, suggesting that they be a bit more neighborly.
 """
@@ -89,24 +95,27 @@ class Helper:
 
     def read_file(self) -> None:
         print()        
-        while True:
-        # loop through current directory
-            print()
+        if True:
+            # loop through current directory
             print(os.listdir('./'))
+            print()
             for root, dirs, files in os.walk('./'):
-                file_name = input("What is the file name? ")
+                file_name = input("🤖 CLIV3: What is the file name? ")
                 file_path = os.path.join('./', file_name)
                 file_exist = os.path.exists(file_path)
                 if file_exist == True:
                         with open(file_path, 'r') as file:
                             content = file.read()
                             self.query(content)
-                            self.console.clear()
-                            markdown = Markdown('\t' + content)
-                            self.console.print(markdown)
                             break
-                else:
-                    print(f"Please choose a file in the current directory")
+                
+                elif file_exist == False and file_name.lower() != "q":
+                    print(f"🤖 CLIV3: Please choose a file in the current directory")
+                    break
+
+                elif file_name.lower() == "q": 
+                    ''' I want user to have ability to quit cliv3 '''
+                    print("🤖 CLIV3: Goodbyte!")
                     break
 
     def chat(self) -> None:
@@ -115,8 +124,9 @@ class Helper:
             print()
             print()
             question = input("🤖 CLIV3: What Python topic would you like to ask about? ")
-            if question == "code review":
+            if question.lower() == "code review":
                 self.read_file()
+                return
             if question.lower() == "q":
                 print("🤖 CLIV3: Goodbyte!")
                 break
