@@ -114,13 +114,13 @@ class Helper:
                     print(f"🤖 CLIV3: Please choose a file in the current directory")
                     break
 
-                elif file_name.lower() == "q": 
-                    ''' I want user to have ability to quit cliv3 '''
-                    print("🤖 CLIV3: Goodbyte!")
-                    break
-            if file_name.lower() == "q":
-                self.chat()
+            if file_name.lower() == "q": 
+                ''' I want user to have ability to quit cliv3 '''
+                print("🤖 CLIV3: Goodbyte!")
                 break
+            # if file_name.lower() == "q":
+            #     self.chat()
+            #     break
                 
                 
                 
