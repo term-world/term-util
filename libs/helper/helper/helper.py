@@ -8,6 +8,7 @@ from rich.console import Console
 from rich.markdown import Markdown
 from rich.style import Style
 
+                # * means all
 from .motd import *
 from .spinner import SpinThread
 
@@ -97,7 +98,7 @@ class Helper:
     def read_file(self) -> None:
         """ allowes cliv3 to read and respond to files """
         print()        
-        if True:
+        while True:
             # prints what's available in dir 
             print(os.listdir('./'))
             print()
@@ -127,6 +128,7 @@ class Helper:
         """ allows user to interact with cliv3 """
         self.motd()
         while True:
+            print()
             print()
             print()
             question = input("🤖 CLIV3: What Python topic would you like to ask about? ")
