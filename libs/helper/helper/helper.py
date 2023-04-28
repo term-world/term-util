@@ -3,14 +3,11 @@ import os.path
 import openai
 import json
 
-from rich.live import Live
 from rich.console import Console
 from rich.markdown import Markdown
-from rich.style import Style
 
                 # * means all
 from .motd import *
-from .spinner import SpinThread
 
 from time import sleep
 
@@ -56,10 +53,10 @@ class Helper:
             except KeyError:
                 pass
 
-    def parse_blob(self, responses: dict = {}) -> str:
-        """ don't think this is actually needed """
+    """ def parse_blob(self, responses: dict = {}) -> str:
+        # don't think this is actually needed #
         for choice in responses["choices"]:
-            return choice["message"]["content"].strip()
+            return choice["message"]["content"].strip() """
 
     def render(self, response: str = "") -> None:
         """ takes the response and makes it look better in terminal """
@@ -67,6 +64,7 @@ class Helper:
         self.console.print(markdown, soft_wrap = False, end = '\r')
 
     def query(self,question: str = "") -> str:
+        """ gives user question to openai """
         PROMPTS.append(
             {"role": "user", "content": question}
             )
@@ -93,6 +91,7 @@ class Helper:
         self.console.print(markdown, soft_wrap=False, end='')
                 
     def motd(self) -> None:
+        """ turns response into markdown format """
         self.render(msg)
 
     def read_file(self) -> None:
@@ -104,6 +103,9 @@ class Helper:
             print()
             for root, dirs, files in os.walk('./'):
                 file_name = input("🤖 CLIV3: What is the file name? ")
+                if file_name.lower() == "q":
+                    # allowes user to quit cliv3 while in code review mode 
+                    break
                 file_path = os.path.join('./', file_name)
                 file_exist = os.path.exists(file_path)
                 if file_exist == True:
@@ -112,25 +114,22 @@ class Helper:
                             self.query(content)
                             print()
                             break
-                
-                # tells user to choose a file in the dir they're in 
+                    
                 elif file_exist == False and file_name.lower() != "q":
+                    # tells user to choose a file in the dir they're in 
                     print(f"🤖 CLIV3: Please choose a file in the current directory")
                     break
 
+            if file_name.lower() == "q": 
                 # allowes user to quit cliv3 while in code review mode 
-                elif file_name.lower() == "q": 
-                    ''' I want user to have ability to quit cliv3 '''
-                    print("🤖 CLIV3: Goodbyte!")
-                    break
+                print("🤖 CLIV3: Goodbyte!")
+                break
 
     def chat(self) -> None:
         """ allows user to interact with cliv3 """
         self.motd()
         while True:
-            print()
-            print()
-            print()
+            print("\n\n\n")
             question = input("🤖 CLIV3: What Python topic would you like to ask about? ")
             if question.lower() == "code review":
                 # goes to code review mode if user types 'code review'
