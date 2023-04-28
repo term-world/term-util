@@ -87,7 +87,8 @@ class Helper:
         self.console.clear()
         # clears the console so user only sees markdown version of response 
         markdown = Markdown('\t' + words)
-        print()      
+        print()
+        print(question, "\n")      
         self.console.print(markdown, soft_wrap=False, end='')
                 
     def motd(self) -> None:
