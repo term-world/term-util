@@ -102,7 +102,6 @@ class Helper:
             print()
             for root, dirs, files in os.walk('./'):
                 file_name = input("🤖 CLIV3: What is the file name? ")
-                
                 if file_name.lower() == "q": 
                     ''' I want user to have ability to quit cliv3 '''
                     break
