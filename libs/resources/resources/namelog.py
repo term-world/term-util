@@ -25,10 +25,15 @@ class UserLog:
                 "natural_gas": natural_gas
             }
 
-        log.append(entry)
+            #length = len(log)
+            #entry_num = length +1
+
+            #log[f"{entry_num}"] = entry
+
+            log.append(entry)
         
         with open("../../term-util-power-planters/libs/resources/resources/log.json", "w") as fh:
-            json.dump(entry, fh)
+            json.dump(log, fh)
    
         #energy.append({"user": name, "time": now, "wind": wind, "solar": solar, "coal": coal, "oil": oil, "nuclear": nuclear, "natural_gas": natural_gas})
         #path = os.path.dirname(resources.__file__)
