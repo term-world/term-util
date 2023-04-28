@@ -103,8 +103,9 @@ class Helper:
             print()
             for root, dirs, files in os.walk('./'):
                 file_name = input("🤖 CLIV3: What is the file name? ")
+                
                 if file_name.lower() == "q":
-                    # allowes user to quit cliv3 while in code review mode 
+                    # allows user to quit cliv3 while in code review mode 
                     break
                 file_path = os.path.join('./', file_name)
                 file_exist = os.path.exists(file_path)
@@ -122,7 +123,7 @@ class Helper:
 
             if file_name.lower() == "q": 
                 # allowes user to quit cliv3 while in code review mode 
-                print("🤖 CLIV3: Goodbyte!")
+                self.chat
                 break
 
     def chat(self) -> None:
