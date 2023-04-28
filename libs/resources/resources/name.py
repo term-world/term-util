@@ -25,10 +25,10 @@ class User_Log:
     users = []
 
 
+
     renewable = solar_energy + wind_energy
     nonrenewable = coal_energy + oil_energy
     users.append({"user": user, "time": local_time, "renewable": renewable , "nonrenewable": nonrenewable})
-
 
 
     # save the list as a file
