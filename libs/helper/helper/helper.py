@@ -102,6 +102,10 @@ class Helper:
             print()
             for root, dirs, files in os.walk('./'):
                 file_name = input("🤖 CLIV3: What is the file name? ")
+                
+                if file_name.lower() == "q": 
+                    ''' I want user to have ability to quit cliv3 '''
+                    break
                 file_path = os.path.join('./', file_name)
                 file_exist = os.path.exists(file_path)
                 if file_exist == True:
@@ -113,14 +117,11 @@ class Helper:
                 elif file_exist == False and file_name.lower() != "q":
                     print(f"🤖 CLIV3: Please choose a file in the current directory")
                     break
-
+            #
             if file_name.lower() == "q": 
                 ''' I want user to have ability to quit cliv3 '''
                 print("🤖 CLIV3: Goodbyte!")
                 break
-            # if file_name.lower() == "q":
-            #     self.chat()
-            #     break
                 
                 
                 
