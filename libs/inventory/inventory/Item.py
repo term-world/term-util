@@ -130,7 +130,7 @@ class Factory:
     def make(self):
         final_name = self.rename(self.name)
         self.file = re.sub(
-            f"{self.template.__name__}",
+            f"{self.template.__package__}\([a-zA-Z0-9_]+\)",
             f"{final_name}({self.item_type.__name__})",
             self.file,
             1
