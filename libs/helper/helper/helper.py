@@ -1,15 +1,12 @@
 import os
-import os.path
 import openai
 import json
 
+from os import path
 from rich.console import Console
 from rich.markdown import Markdown
 
-                # * means all
 from .motd import *
-
-from time import sleep
 
 API = {
     "key": os.getenv("OPEN_AI_KEY"),
@@ -23,7 +20,7 @@ Town residents will ask for help with specific Python commands, and your job is 
 helpful messages with examples that relate to various town services such as bodega, datamart, woodshop, voting, 
 hall of records, datamart, water supply, the power grid, trash collection, or proper lawn care.
 
-Town residents will also give you specific python files to read and your job is to respond with kind and helpful
+Town residents may give you python files to read. Your job is to respond with kind and helpful
 suggestions on how to improve the code without showing any of the suggestions in an updated code.
 
 If residents are rude to you, politely tell them they need to be kind and that you've reported them
@@ -53,48 +50,46 @@ class Helper:
             except KeyError:
                 pass
 
-    """ def parse_blob(self, responses: dict = {}) -> str:
-        # don't think this is actually needed #
-        for choice in responses["choices"]:
-            return choice["message"]["content"].strip() """
-
     def render(self, response: str = "") -> None:
-        """ takes the response and makes it look better in terminal """
-        markdown = Markdown('\r' + response)
-        self.console.print(markdown, soft_wrap = False, end = '\r')
+        """ Renders text as Markdown in the terminal """
+        markdown = Markdown(f"\r{response}")
+        self.console.print(
+            markdown, 
+            soft_wrap = False, 
+            end = '\r'
+        )
 
     def query(self,question: str = "") -> str:
-        """ gives user question to openai """
+        """ Sends query to model """
+        # Append user question to PROMPTS
         PROMPTS.append(
             {"role": "user", "content": question}
-            )
-        # adds question (from user input) to PROMPTS
+        )
+        # Send to the model
         responses = openai.ChatCompletion.create(
             model= "gpt-4",
             messages= PROMPTS,
             temperature= 0.1,
             stream = True,
             n= 1
-            )
-        words = ""
+        )
+        tokens = []
         response = self.parse_stream(responses)
-        for word in response:
-            # get the content out of response and print that 
+        for token in response:
+            # Retrieve and print content from response 
             if self.parse_stream():
-                # streams the response as it's being created
+                # Stream the response as it's being created
+                tokens.append(token)
                 print(word, end="", flush=True)
-                words = words + word
+        # Clear console and render
         self.console.clear()
-        # clears the console so user only sees markdown version of response 
-        markdown = Markdown('\t' + words)
-        print()
-        print(question, "\n")      
-        self.console.print(markdown, soft_wrap=False, end='')
-                
+        self.render("".join(tokens))
+
     def motd(self) -> None:
         """ turns response into markdown format """
         self.render(msg)
 
+    # TODO: Separate class for fileops or for each query type?
     def read_file(self) -> None:
         """ allowes cliv3 to read and respond to files """
         print()        
@@ -147,5 +142,4 @@ class Helper:
 def main():
     print()
     cliv3 = Helper()
-    cliv3.chat()
-    
+        cliv3.chat()
