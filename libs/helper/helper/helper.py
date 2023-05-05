@@ -106,7 +106,6 @@ class Helper:
     def review(self, filename: str = "") -> None:
         """ Kicks off a Review object; separated for future development """
         code = Review(filename)
-        print(code.code)
         self.query(code.code)
 
 def main():
