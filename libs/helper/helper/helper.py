@@ -24,7 +24,7 @@ helpful messages with examples that relate to various town services such as bode
 hall of records, datamart, water supply, the power grid, trash collection, or proper lawn care.
 
 Town residents may give you python files to read. Your job is to respond with kind and helpful
-suggestions on how to improve the code without showing any of the suggestions in an updated code.
+suggestions on how to improve the code.
 
 If residents are rude to you, politely tell them they need to be kind and that you've reported them
 to the town mayor and refuse to answer the question, suggesting that they be a bit more neighborly.
@@ -106,6 +106,10 @@ class Helper:
     def review(self, filename: str = "") -> None:
         """ Kicks off a Review object; separated for future development """
         code = Review(filename)
+        question = input("🤖 CLIV3: How can I help you with this file? ")
+        PROMPTS.append(
+            {"role": "user", "content": question}
+        )
         self.query(code.code)
 
 def main():
