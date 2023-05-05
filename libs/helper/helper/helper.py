@@ -6,7 +6,10 @@ from os import path
 from rich.console import Console
 from rich.markdown import Markdown
 
+from arglite import parser as cliarg
+
 from .motd import *
+from .review import Review
 
 API = {
     "key": os.getenv("OPEN_AI_KEY"),
@@ -46,7 +49,7 @@ class Helper:
         for chunk in responses:
             try:
                 msg = chunk["choices"][0]["delta"]["content"]
-                yield msg  
+                yield msg
             except KeyError:
                 pass
 
@@ -54,8 +57,8 @@ class Helper:
         """ Renders text as Markdown in the terminal """
         markdown = Markdown(f"\r{response}")
         self.console.print(
-            markdown, 
-            soft_wrap = False, 
+            markdown,
+            soft_wrap = False,
             end = '\r'
         )
 
@@ -80,7 +83,7 @@ class Helper:
             if self.parse_stream():
                 # Stream the response as it's being created
                 tokens.append(token)
-                print(word, end="", flush=True)
+                print(token, end="", flush=True)
         # Clear console and render
         self.console.clear()
         self.render("".join(tokens))
@@ -89,57 +92,28 @@ class Helper:
         """ turns response into markdown format """
         self.render(msg)
 
-    # TODO: Separate class for fileops or for each query type?
-    def read_file(self) -> None:
-        """ allowes cliv3 to read and respond to files """
-        print()        
-        while True:
-            # prints what's available in dir 
-            print(os.listdir('./'))
-            print()
-            for root, dirs, files in os.walk('./'):
-                file_name = input("🤖 CLIV3: What is the file name? ")
-                
-                if file_name.lower() == "q":
-                    # allows user to quit cliv3 while in code review mode 
-                    break
-                file_path = os.path.join('./', file_name)
-                file_exist = os.path.exists(file_path)
-                if file_exist == True:
-                        with open(file_path, 'r') as file:
-                            content = file.read()
-                            self.query(content)
-                            print()
-                            break
-                    
-                elif file_exist == False and file_name.lower() != "q":
-                    # tells user to choose a file in the dir they're in 
-                    print(f"🤖 CLIV3: Please choose a file in the current directory")
-                    break
-            #
-            if file_name.lower() == "q": 
-                # allowes user to quit cliv3 while in code review mode 
-                self.chat
-                break
-
     def chat(self) -> None:
         """ allows user to interact with cliv3 """
         self.motd()
         while True:
-            print("\n\n\n")
-            question = input("🤖 CLIV3: What Python topic would you like to ask about? ")
-            if question.lower() == "code review":
-                # goes to code review mode if user types 'code review'
-                self.read_file()
-                print()
-                return
+            question = input("🤖 CLIV3: What Python topic would you like to ask about? ") 
             if question.lower() == "q":
                 # allows user to quit cliv3
                 print("🤖 CLIV3: Goodbyte!")
                 break
             self.query(question)
 
+    def review(self, filename: str = "") -> None:
+        """ Kicks off a Review object; separated for future development """
+        code = Review(filename)
+        print(code.code)
+        self.query(code.code)
+
 def main():
-    print()
     cliv3 = Helper()
+    # If review mode, do code review
+    if cliarg.optional.review:
+        cliv3.review(cliarg.optional.review)
+    # Otherwise, let's chat!
+    else:
         cliv3.chat()
