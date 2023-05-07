@@ -1,13 +1,13 @@
 import json
 import sys
 import os
-import resources
 
 class PowerGrid:
-
+    
+    #Turn this perameter into a dictionary 
     def add_power(wind = 0, solar = 0, coal = 0, oil = 0, nuclear = 0, natural_gass = 0):
         # sorts power based on its source and adds it to the power grid
-        path = os.path.dirname(resources.__file__)
+        path = os.path.dirname(__file__)
         renewable_energy = wind + solar
         exhaustable_energy = coal + oil + nuclear + natural_gass
         with open(f"{path}/worldbattery.json", "r") as fh:
@@ -19,7 +19,7 @@ class PowerGrid:
 
         # Takes a perameter that is the ammount of power it takes to run the object
     def use_power(power):
-        path = os.path.dirname(resources.__file__)
+        path = os.path.dirname(__file__)
         with open(f"{path}/worldbattery.json", "r") as fh:
             world_battery = json.load(fh)
 
