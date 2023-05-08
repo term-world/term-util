@@ -38,10 +38,6 @@ class ItemSpec:
 
     def use(self, **kwargs) -> None:
         print(f"You try the {self.__module__}, but it doesn't do anything.")
-        #if self.consumable:
-        #    os.remove(
-        #        self.file
-        #    )
 
 class FixtureSpec(ItemSpec):
 
@@ -94,9 +90,11 @@ class Factory:
 
     def load_template(self, template: str = ""):
         if not template:
-            return Template
+            abspath = os.path.dirname(__file__)
+            template = f"{abspath}/Template.py"
         filepath = os.path.dirname(template)
         template = os.path.basename(template)
+        print(os.path.dirname(template))
         if not filepath:
             filepath = os.path.expanduser(
                 Config.values["INV_PATH"]
