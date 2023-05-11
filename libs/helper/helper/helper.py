@@ -1,15 +1,15 @@
 import os
-import os.path
 import openai
 import json
 
+from os import path
 from rich.console import Console
 from rich.markdown import Markdown
 
-                # * means all
-from .motd import *
+from arglite import parser as cliarg
 
-from time import sleep
+from .motd import *
+from .review import Review
 
 API = {
     "key": os.getenv("OPEN_AI_KEY"),
@@ -23,8 +23,8 @@ Town residents will ask for help with specific Python commands, and your job is 
 helpful messages with examples that relate to various town services such as bodega, datamart, woodshop, voting, 
 hall of records, datamart, water supply, the power grid, trash collection, or proper lawn care.
 
-Town residents will also give you specific python files to read and your job is to respond with kind and helpful
-suggestions on how to improve the code without showing any of the suggestions in an updated code.
+Town residents may give you python files to read. Your job is to respond with kind and helpful
+suggestions on how to improve the code.
 
 If residents are rude to you, politely tell them they need to be kind and that you've reported them
 to the town mayor and refuse to answer the question, suggesting that they be a bit more neighborly.
@@ -49,103 +49,74 @@ class Helper:
         for chunk in responses:
             try:
                 msg = chunk["choices"][0]["delta"]["content"]
-                yield msg  
+                yield msg
             except KeyError:
                 pass
 
-    """ def parse_blob(self, responses: dict = {}) -> str:
-        # don't think this is actually needed #
-        for choice in responses["choices"]:
-            return choice["message"]["content"].strip() """
-
     def render(self, response: str = "") -> None:
-        """ takes the response and makes it look better in terminal """
-        markdown = Markdown('\r' + response)
-        self.console.print(markdown, soft_wrap = False, end = '\r')
+        """ Renders text as Markdown in the terminal """
+        markdown = Markdown(f"\r{response}")
+        self.console.print(
+            markdown,
+            soft_wrap = False,
+            end = '\r'
+        )
 
     def query(self,question: str = "") -> str:
-        """ gives user question to openai """
+        """ Sends query to model """
+        # Append user question to PROMPTS
         PROMPTS.append(
             {"role": "user", "content": question}
-            )
-        # adds question (from user input) to PROMPTS
+        )
+        # Send to the model
         responses = openai.ChatCompletion.create(
             model= "gpt-4",
             messages= PROMPTS,
             temperature= 0.1,
             stream = True,
             n= 1
-            )
-        words = ""
+        )
+        tokens = []
         response = self.parse_stream(responses)
-        for word in response:
-            # get the content out of response and print that 
+        for token in response:
+            # Retrieve and print content from response 
             if self.parse_stream():
-                # streams the response as it's being created
-                print(word, end="", flush=True)
-                words = words + word
+                # Stream the response as it's being created
+                tokens.append(token)
+                print(token, end="", flush=True)
+        # Clear console and render
         self.console.clear()
-        # clears the console so user only sees markdown version of response 
-        markdown = Markdown('\t' + words)
-        print()
-        print(question, "\n")      
-        self.console.print(markdown, soft_wrap=False, end='')
-                
+        self.render("".join(tokens))
+
     def motd(self) -> None:
         """ turns response into markdown format """
         self.render(msg)
-
-    def read_file(self) -> None:
-        """ allowes cliv3 to read and respond to files """
-        print()        
-        while True:
-            # prints what's available in dir 
-            print(os.listdir('./'))
-            print()
-            for root, dirs, files in os.walk('./'):
-                file_name = input("🤖 CLIV3: What is the file name? ")
-                
-                if file_name.lower() == "q":
-                    # allows user to quit cliv3 while in code review mode 
-                    break
-                file_path = os.path.join('./', file_name)
-                file_exist = os.path.exists(file_path)
-                if file_exist == True:
-                        with open(file_path, 'r') as file:
-                            content = file.read()
-                            self.query(content)
-                            print()
-                            break
-                    
-                elif file_exist == False and file_name.lower() != "q":
-                    # tells user to choose a file in the dir they're in 
-                    print(f"🤖 CLIV3: Please choose a file in the current directory")
-                    break
-            #
-            if file_name.lower() == "q": 
-                # allowes user to quit cliv3 while in code review mode 
-                self.chat
-                break
 
     def chat(self) -> None:
         """ allows user to interact with cliv3 """
         self.motd()
         while True:
-            print("\n\n\n")
-            question = input("🤖 CLIV3: What Python topic would you like to ask about? ")
-            if question.lower() == "code review":
-                # goes to code review mode if user types 'code review'
-                self.read_file()
-                print()
-                return
+            question = input("🤖 CLIV3: What Python topic would you like to ask about? ") 
             if question.lower() == "q":
                 # allows user to quit cliv3
                 print("🤖 CLIV3: Goodbyte!")
                 break
             self.query(question)
 
+    def review(self, filename: str = "") -> None:
+        """ Kicks off a Review object; separated for future development """
+        code = Review(filename)
+        question = input("🤖 CLIV3: How can I help you with this file? ")
+        PROMPTS.append(
+            {"role": "user", "content": question}
+        )
+        self.query(code.code)
+
 def main():
-    print()
     cliv3 = Helper()
-    cliv3.chat()
-    
+    # If review mode, do code review
+    if cliarg.optional.review:
+        cliv3.review(cliarg.optional.review)
+    # Otherwise, let's chat!
+    else:
+        cliv3.chat()
