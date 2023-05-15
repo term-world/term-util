@@ -15,19 +15,20 @@ q = narrator.Question(
   }
 )
 
-n.path(q.ask())
+n.path.change(q.ask())
 
 n.narrate()
 
 q = narrator.YesNoQuestion(
   {
-    "question":"Yes or no?","outcomes": [
+    "question":"Yes or no?",
+    "outcomes": [
       {"act":"yo","scene":"statement"},
       {"act":"nah","scene":"statement"}
     ]
   }
 )
 
-n.path(q.ask())
+n.path.change(q.ask())
 
 n.narrate(all = True)

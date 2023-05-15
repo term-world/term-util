@@ -8,18 +8,20 @@ class Narrator:
   def __init__(self):
     fh = open(".paths.yml")
     self.paths = yaml.safe_load(fh)
-    self.path = Path()
+    self.path = Path(list(self.paths.keys())[0],list(self.paths.values())[0])
 
   def narrate(self, all: bool = False):
     lines = []
+    acts = list(self.paths)
 
-    chosen_path = self.paths[self.path.act] if self.path.act in self.paths else list(self.paths)[0]
-    print(chosen_path)
+    chosen_path = self.paths[self.path.act] if self.path.act in acts else self.paths[acts[0]]
+
     if all:
       for scenes in list(chosen_path.values()):
         lines += scenes
     else:
-      lines = chosen_path[self.path.scene] if self.path.scene in chosen_path.values() else list(self.paths.values())[0]
+      scenes = list(chosen_path)
+      lines = chosen_path[self.path.scene] if self.path.scene in scenes else chosen_path[scenes[0]]
 
     for line in lines:
       print(line)
