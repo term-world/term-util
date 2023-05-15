@@ -12,13 +12,15 @@ class Narrator:
 
   def narrate(self, all: bool = False):
     lines = []
-    chosen_path = self.paths[self.path.number]
+
+    chosen_path = self.paths[self.path.act] if self.path.act in self.paths else list(self.paths)[0]
+    print(chosen_path)
     if all:
       for scenes in list(chosen_path.values()):
         lines += scenes
     else:
-      lines = chosen_path[self.path.scene]
+      lines = chosen_path[self.path.scene] if self.path.scene in chosen_path.values() else list(self.paths.values())[0]
+
     for line in lines:
       print(line)
       sleep(1)
-    self.path.scene += 1
