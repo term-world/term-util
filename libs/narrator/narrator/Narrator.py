@@ -5,8 +5,8 @@ from .Path import Path
 
 class Narrator:
 
-  def __init__(self):
-    fh = open(".paths.yml")
+  def __init__(self, path_file: str = ".paths.yml"):
+    fh = open(path_file)
     self.paths = yaml.safe_load(fh)
     self.path = Path(
         paths = {
