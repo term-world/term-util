@@ -24,20 +24,24 @@ class Narrator:
         chosen_path = self.paths[self.path.act] 
     except KeyError:
         chosen_path = self.paths[acts[0]]
-    
+
     if "all" in kwargs and kwargs["all"] == True:
       # Play all scenes
       for scenes in list(chosen_path.values()):
         lines += scenes
     elif "scenes" in kwargs:
-        try:
-          scenes = int(kwargs["scenes"])
-        except ValueError:
-          print("ERROR: Scene value is not an integer!")
-          exit()
-        if scenes < len(list(chosen_path.values())):
-          for idx in range(scenes):
-            lines += list(chosen_path.values())[idx]
+      try:
+        scenes = int(kwargs["scenes"])
+      except ValueError:
+        print("ERROR: Scene value could not be converted to an integer!")
+        exit()
+      try:
+        scene_location = list(chosen_path.keys()).index(self.path.scene)
+        for idx in range(scene_location,scene_location+scenes):
+          lines += list(chosen_path.values())[idx]
+      except IndexError:
+        print("ERROR: Scene value is greater then remaining amount of scenes!")
+        exit()
     else:
       # Play one
       try:

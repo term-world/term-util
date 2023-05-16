@@ -1,6 +1,7 @@
 import narrator
 
 n = narrator.Narrator()
+
 n.narrate()
 
 q = narrator.Question(
@@ -23,7 +24,9 @@ q = narrator.Question(
     "responses": [
       {"choice": "1", "outcome": {"act":"bruh","scene":"short","scenes": 1}},
       {"choice": "2", "outcome": {"act":"bruh","scene":"short","scenes": 2}},
-      {"choice": "3", "outcome": {"act":"bruh","scene":"short","all": True}}
+      {"choice": "3", "outcome": {"act":"bruh","scene":"short","all": True}},
+      {"choice": "4", "outcome": {"act":"bruh","scene":"med","scenes": 2}},
+      {"choice": "error?", "outcome": {"act":"bruh","scene":"med", "scenes": 3}}
     ]
   }
 )
