@@ -9,6 +9,6 @@ class Path:
   def next_scene(self):
     self.scene += 1
 
-  def change(self, path):
+  def change(self, path: dict):
     self.act = path["act"]
     self.scene = path["scene"]

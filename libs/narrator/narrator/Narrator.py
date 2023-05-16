@@ -25,4 +25,4 @@ class Narrator:
 
     for line in lines:
       print(line)
-      sleep(1)
+      sleep(1.5)
