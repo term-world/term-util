@@ -9,7 +9,7 @@ from glob import glob
 from importlib import util
 
 from .Config import *
-from .Template import Template
+#from .Template import Template
 
 sys.path.append(
     os.path.expanduser(f'{Config.values["INV_PATH"]}')
