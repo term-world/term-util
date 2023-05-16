@@ -17,6 +17,8 @@ q = narrator.Question(
 
 n.path.change(q.ask())
 
+# TODO: Make this variable; i.e. any number of frames from question,
+#       default 1
 for _ in range(2):
   n.narrate()
 

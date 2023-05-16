@@ -11,7 +11,7 @@ class Narrator:
     self.path = Path(
         paths = {
           "act": list(self.paths.keys())[0],
-          "scene": list(self.paths.values())
+          "scene": list(self.paths.values())[0]
         }
     )
 
