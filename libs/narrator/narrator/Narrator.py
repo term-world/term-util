@@ -29,10 +29,10 @@ class Narrator:
       for scenes in list(chosen_path.values()):
         lines += scenes
     else:
-      scenes = list(chosen_path)
       try:
         lines = chosen_path[self.path.scene]
       except KeyError:
+        scenes = list(chosen_path)
         lines = chosen_path[scenes[0]]
 
     for line in lines:

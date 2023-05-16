@@ -21,7 +21,7 @@ class Question:
         self.responses[letter] = opt
         break
 
-  def ask(self) -> float:
+  def ask(self) -> dict:
     while True:
       ask = input(self.prompt).lower()
       if ask in self.responses:

@@ -5,7 +5,7 @@ class Path:
     self.act = paths["act"]
     self.scene = list(list(paths["scene"])[0].keys())[0]
 
-  def get_next_scene(self, paths):
+  def get_next_scene(self, paths: dict):
     """ If there's another scene to go to, well, go to it! """
     scenes = list(
         paths[self.act]
@@ -15,8 +15,8 @@ class Path:
     except ValueError:
         return
     idx += 1
-    if(idx <= len(scenes)):
-        self.scene = paths[self.act][scenes[idx]]
+    if(idx < len(scenes)):
+        self.scene = scenes[idx]
 
   def change(self, path: dict = {"act": 1, "scene": 1}):
     """ Change a scene in a currently-running path """

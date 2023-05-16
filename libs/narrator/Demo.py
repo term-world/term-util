@@ -17,7 +17,8 @@ q = narrator.Question(
 
 n.path.change(q.ask())
 
-n.narrate()
+for _ in range(2):
+  n.narrate()
 
 q = narrator.YesNoQuestion(
   {
