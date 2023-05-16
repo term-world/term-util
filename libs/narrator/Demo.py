@@ -1,7 +1,6 @@
 import narrator
 
 n = narrator.Narrator()
-
 n.narrate()
 
 q = narrator.Question(

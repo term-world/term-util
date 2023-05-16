@@ -35,9 +35,9 @@ class Narrator:
         except ValueError:
           print("ERROR: Scene value is not an integer!")
           exit()
-        if scenes < len(chosen_path.values()):
+        if scenes < len(list(chosen_path.values())):
           for idx in range(scenes):
-            lines += chosen_path.values()[idx]
+            lines += list(chosen_path.values())[idx]
     else:
       # Play one
       try:
