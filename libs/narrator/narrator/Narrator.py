@@ -30,20 +30,21 @@ class Narrator:
       for scenes in list(chosen_path.values()):
         lines += scenes
     elif "scenes" in kwargs:
+      # From the current scene, play a number of scenes specified
       try:
         scenes = int(kwargs["scenes"])
       except ValueError:
-        print("ERROR: Scene value could not be converted to an integer!")
+        print("ERROR: Scene count is not a number!!")
         exit()
       try:
         scene_location = list(chosen_path.keys()).index(self.path.scene)
-        for idx in range(scene_location,scene_location+scenes):
+        for idx in range(scene_location, scene_location + scenes):
           lines += list(chosen_path.values())[idx]
       except IndexError:
-        print("ERROR: Scene value is greater then remaining amount of scenes!")
-        exit()
+        # If we go beyond the scene boundary, just stop.
+        pass
     else:
-      # Play one
+      # Play only one scene from the selected point
       try:
         lines = chosen_path[self.path.scene]
       except KeyError:

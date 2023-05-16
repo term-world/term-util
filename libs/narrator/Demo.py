@@ -26,7 +26,7 @@ q = narrator.Question(
       {"choice": "2", "outcome": {"act":"bruh","scene":"short","scenes": 2}},
       {"choice": "3", "outcome": {"act":"bruh","scene":"short","all": True}},
       {"choice": "4", "outcome": {"act":"bruh","scene":"med","scenes": 2}},
-      {"choice": "error?", "outcome": {"act":"bruh","scene":"med", "scenes": 3}}
+      {"choice": "error?", "outcome": {"act":"bruh","scene":"short", "scenes": 10}}
     ]
   }
 )
