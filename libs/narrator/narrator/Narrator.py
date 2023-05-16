@@ -37,6 +37,6 @@ class Narrator:
 
     for line in lines:
       print(line)
-      sleep(1)
+      sleep(1.5)
 
     self.path.get_next_scene(self.paths)
