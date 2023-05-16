@@ -1,5 +1,3 @@
-from itertools import islice
-
 class Path:
 
   def __init__(self, paths: dict = {}):
