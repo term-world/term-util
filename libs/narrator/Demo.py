@@ -16,11 +16,22 @@ q = narrator.Question(
 )
 
 n.path.change(q.ask())
+n.narrate()
 
-# TODO: Make this variable; i.e. any number of frames from question,
-#       default 1
-for _ in range(2):
-  n.narrate()
+q = narrator.Question(
+  {
+    "question": "How many, bruh?",
+    "responses": [
+      {"choice": "1", "outcome": {"act":"bruh","scene":"short","scenes": 1}},
+      {"choice": "2", "outcome": {"act":"bruh","scene":"short","scenes": 2}},
+      {"choice": "3", "outcome": {"act":"bruh","scene":"short","all": True}}
+    ]
+  }
+)
+
+result = q.ask()
+n.path.change(result)
+n.narrate(**result)
 
 q = narrator.YesNoQuestion(
   {
