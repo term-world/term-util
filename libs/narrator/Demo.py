@@ -6,23 +6,45 @@ n.narrate()
 
 q = narrator.Question(
   {
-    "question": "Skip, meh, er nah",
+    "question": "Yo, Nah, or Sha",
     "responses": [
-      {"choice": "skip", "outcome": 2},
-      {"choice": "meh", "outcome": 0},
-      {"choice": "nah", "outcome": 1.0}
+      {"choice": "yo", "outcome": {"act":"yo","scene":"statement"}},
+      {"choice": "nah", "outcome": {"act":"nah","scene":"statement"}},
+      {"choice": "sha", "outcome": {"act":"sha","scene":"short"}}
+    ]
+  }
+)
+
+n.path.change(q.ask())
+n.narrate()
+
+q = narrator.Question(
+  {
+    "question": "How many, bruh?",
+    "responses": [
+      {"choice": "1", "outcome": {"act":"bruh","scene":"short","scenes": 1}},
+      {"choice": "2", "outcome": {"act":"bruh","scene":"short","scenes": 2}},
+      {"choice": "3", "outcome": {"act":"bruh","scene":"short","all": True}},
+      {"choice": "4", "outcome": {"act":"bruh","scene":"med","scenes": 2}},
+      {"choice": "error?", "outcome": {"act":"bruh","scene":"med", "scenes": 10}}
+    ]
+  }
+)
+
+result = q.ask()
+n.path.change(result)
+n.narrate(**result)
+
+q = narrator.YesNoQuestion(
+  {
+    "question":"Yes or no?",
+    "outcomes": [
+      {"act":"yo","scene":"statement"},
+      {"act":"nah","scene":"statement"}
     ]
   }
 )
 
 n.path.change(q.ask())
 
-n.narrate()
-
-q = narrator.YesNoQuestion(
-  {"question":"Yes or no?","outcomes":[0,1]}
-)
-
-n.path.change(q.ask())
-
-n.narrate(all=True)
+n.narrate(all = True)

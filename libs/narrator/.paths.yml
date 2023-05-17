@@ -1,21 +1,28 @@
-0:
-  0: 
+"yo":
+  "statement": 
     - Yo.
     - Yo!
-  1:
+  "question":
     - Yo.
     - Yo?
-1:
-  0: 
-    - Nah.
-    - Nah?
-  1:
+"nah":
+  "statement":
     - Nah!
     - Nah; nah.
-2:
-  0:
+  "question": 
+    - Nah.
+    - Nah?
+"sha":
+  "short":
     - Sha.
     - Sha bruh.
-  1: 
+  "long": 
     - Shaaaaaa.
     - Shaaa naa naaaaa.
+"bruh":
+  "short":
+    - Bruh.
+  "med":
+    - Bruuuh.
+  "long":
+    - Bruuuuuuuh!

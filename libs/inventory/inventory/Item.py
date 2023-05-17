@@ -9,7 +9,7 @@ from glob import glob
 from importlib import util
 
 from .Config import *
-from .Template import Template
+#from .Template import Template
 
 sys.path.append(
     os.path.expanduser(f'{Config.values["INV_PATH"]}')
@@ -38,10 +38,6 @@ class ItemSpec:
 
     def use(self, **kwargs) -> None:
         print(f"You try the {self.__module__}, but it doesn't do anything.")
-        #if self.consumable:
-        #    os.remove(
-        #        self.file
-        #    )
 
 class FixtureSpec(ItemSpec):
 
@@ -94,14 +90,18 @@ class Factory:
 
     def load_template(self, template: str = ""):
         if not template:
-            return Template
-        template = template.split(".py")[0]
-        inv_path = os.path.expanduser(
-            Config.values["INV_PATH"]
-        )
+            abspath = os.path.dirname(__file__)
+            template = f"{abspath}/Template.py"
+        filepath = os.path.dirname(template)
+        template = os.path.basename(template)
+        print(os.path.dirname(template))
+        if not filepath:
+            filepath = os.path.expanduser(
+                Config.values["INV_PATH"]
+            )
         spec = util.spec_from_file_location(
             template,
-            f"{inv_path}/{template}.py"
+            f"{filepath}/{template}"
         )
         mod = util.module_from_spec(spec)
         return mod
@@ -128,7 +128,7 @@ class Factory:
     def make(self):
         final_name = self.rename(self.name)
         self.file = re.sub(
-            f"{self.template.__name__}",
+            f"{self.template.__package__}\([a-zA-Z0-9_]+\)",
             f"{final_name}({self.item_type.__name__})",
             self.file,
             1
