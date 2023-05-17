@@ -1,6 +1,6 @@
 class Question:
 
-  def __init__(self, prompt: dict):
+  def __init__(self, prompt: dict = {}):
     self.responses = {}
     self.prompt = prompt["question"]
     for response in prompt["responses"]:
@@ -21,7 +21,7 @@ class Question:
         self.responses[letter] = opt
         break
 
-  def ask(self) -> float:
+  def ask(self) -> dict:
     while True:
       ask = input(self.prompt).lower()
       if ask in self.responses:
