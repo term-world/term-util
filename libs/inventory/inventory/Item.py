@@ -9,7 +9,6 @@ from glob import glob
 from importlib import util
 
 from .Config import *
-#from .Template import Template
 
 sys.path.append(
     os.path.expanduser(f'{Config.values["INV_PATH"]}')
@@ -26,6 +25,9 @@ class ItemSpec:
                 arg = arg.replace("-","")
                 self.actions[arg] = val
         self.consumable = True
+        self.equippable = False
+        self.unique = False
+        self.durability = 10
         self.VOLUME = 1
         self.vars()
 
@@ -48,13 +50,12 @@ class FixtureSpec(ItemSpec):
 
 class BoxSpec(ItemSpec):
 
-    consumable = True
-    VOLUME = 2
-
     def __init__(self, filename: str = ""):
         super().__init__(filename)
+        self.VOLUME = 2
 
     def use(self, **kwargs) -> None:
+        """ Define use method to be boxy """
         if kwargs["action"] == "pack":
             return
         if kwargs["action"] == "unpack":
@@ -65,14 +66,20 @@ class BoxSpec(ItemSpec):
                 self.file
             )
 
+class RelicSpec(ItemSpec):
+
+    def __init__(self, filename = ""):
+        super().__init__(filename)
+        self.equippable = True
+
 class Factory:
 
-    def __init__(self, name, path: str = "", fixture: bool = False, template: str = "", **kwargs):
+    def __init__(self, name, path: str = "", item_type: any = ItemSpec, template: str = "", **kwargs):
         """ Creates items from templates """
         self.path = path
         self.name = self.clean(name)
         self.template = self.load_template(template)
-        self.item_type = FixtureSpec if fixture else ItemSpec
+        self.item_type = item_type
 
         # Load source locally, and handle based on template contents
         source = inspect.getsource(self.template)
@@ -154,3 +161,9 @@ class IsFixture(Exception):
 
     def __init__(self, item:str, *args):
         super().__init__(args)
+
+class EquipError(Exception):
+    def __init__(self, item:str, *args):
+        super().__init__(args)
+        print("Can't equip {item}.")
+        exit()

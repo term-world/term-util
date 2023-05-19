@@ -17,6 +17,7 @@ from .Item import ItemSpec
 from .Item import FixtureSpec
 from .Item import BoxSpec
 from .Item import OutOfError
+from .Item import EquipError
 from .Item import IsFixture
 from .Item import Factory
 
@@ -56,28 +57,6 @@ class Acquire:
         self.box = Validator.is_box(self.name)
         self.filename = f"{self.name}.{self.ext}"
 
-    def validate(self) -> bool:
-        """ DEPRECATED: Use Validator module """
-        # TODO: Move validation to the item level?
-        #       I see a distinct issue with attempting to
-        #       import from the file itself, though
-
-        # Check to see if the item is usable and
-        # remove extra numbering from the filename
-        try:
-            self.name, self.ext = self.filename.split(".")
-            if not self.ext == "py":
-                raise
-            obj = importlib.import_module(self.name)
-            getattr(obj, self.name)().use
-            self.is_box(obj)
-            # Reset the filename without appended digits if a
-            # multiple/copy from drop
-        except Exception as e:
-            print("Not a valid item file")
-            return False
-        return True
-
     def move(self):
         try:
             path = os.path.expanduser(
@@ -92,10 +71,14 @@ class Acquire:
                     # fails it might be OK
                     pass
                 obj = importlib.import_module(self.name)
-                if "ItemSpec" in dir(obj):
+                if "ItemSpec" in dir(obj) or "RelicSpec" in dir(obj):
                     # Remove only the physically present copy
                     os.remove(f"./{self.item}")
         except Exception as e:
+            # TODO: Differentiate levels of inacquisition. For
+            #       example, change the message here to reflect
+            #       _why_ something couldn't Acquire; see add
+            #       method below as well.
             print(f"Couldn't acquire {self.name}")
             exit()
 
@@ -124,7 +107,7 @@ class List:
             fh = open(
                 os.path.expanduser(PATH),
                 "r+"
-              )
+            )
             self.inventory = json.load(fh)
             fh.close()
         except: pass
@@ -145,7 +128,6 @@ class List:
     # Add/remove items
 
     def total_volume(self) -> int:
-
         total_volume = 0
         for item in self.inventory:
             if os.path.exists(f"{self.path}/{item}.py"):
@@ -153,9 +135,8 @@ class List:
         return total_volume
 
     def add(self, item: str, number: int = 1) -> None:
-        if item in self.inventory:
+        if item in self.inventory and not self.is_consumable(item).unique:
             self.inventory[item]["quantity"] += number
-            # self.inventory[item]["volume"] += volume
         else:
             self.inventory[item] = {
                 "quantity": number,
@@ -181,9 +162,8 @@ class List:
         for item in deletes:
             del self.inventory[item]
 
-    # Completely removes all items in .inv not listed in the .registry file
-
     def cleanup_items(self) -> None:
+        """ Removes items not in the inventory file """
         tempdict = {}
         path = os.path.expanduser("~/.inv/")
         for item in os.listdir(path):
@@ -195,9 +175,8 @@ class List:
         for item in tempdict:
             os.remove(os.path.expanduser(f"~/.inv/{item}"))
 
-    # Create a nice(r) display
-
     def display(self):
+        """ Creates a nice display on command """
         table = Table(title=f"{os.getenv('LOGNAME')}'s inventory")
         # Write latest inventory ahead of printing table
         self.write()
@@ -205,29 +184,31 @@ class List:
         self.cleanup_items()
         table.add_column("Item name")
         table.add_column("Item count")
-        table.add_column("Item file")
         table.add_column("Consumable")
         table.add_column("Volume")
+        table.add_column("Equippable")
+        table.add_column("Durability")
 
         for item in self.inventory:
             table.add_row(
                 item,
                 str(self.inventory[item]["quantity"]),
-                self.inventory[item]["filename"],
                 str(self.is_consumable(item).consumable),
                 # TODO: Is it necessary to use the consumable status to derive VOLUME?
-                str(self.is_consumable(item).VOLUME * self.inventory[item]["quantity"])
+                str(self.is_consumable(item).VOLUME * self.inventory[item]["quantity"]),
+                str(self.is_consumable(item).equippable),
+                self.qualify_durability(self.is_consumable(item))
             )
 
         console = Console()
-        print("")
         console.print(table)
         print(f"Your current total volume limit is: {self.total_volume()}/{MAX_VOLUME}\n")
 
     # Returns a boolean whether the item object is a consumable
 
     def is_consumable(self, item: str) -> list:
-
+        # TODO: rename this method; the name is inconsistent
+        #       with its apparent function?
         try:
             item_file = importlib.import_module(f"{item}")
         except ModuleNotFoundError:
@@ -238,6 +219,19 @@ class List:
             print(f"{item} doesn't seem to be a valid object.")
             exit()
         return instance
+
+    @staticmethod
+    def qualify_durability(item: object) -> str:
+        ratings = {
+            "Excellent": 8,
+            "Good": 5,
+            "Fair": 3,
+            "Poor": 1
+        }
+        for rank in ratings:
+            if item.durability >= ratings[rank]:
+                return rank
+            return "Broken"
 
 class Items:
 
@@ -259,6 +253,9 @@ class Items:
             if element == item:
                 return True
         return False
+
+    def __is_equippable(self, item) -> bool:
+        pass
 
     def trash(self, item: str, quantity: int = 1) -> None:
         """ Removes item from the list; tied to the "remove" .bashrc alias """
@@ -294,6 +291,16 @@ class Items:
             list.add(item, 0 - int(quantity))
         except:
             pass
+    
+    def equip(self, item: str):
+        try:
+            if not item in self.list:
+                raise OutOfError
+            if not self.__is_equippable(item):
+                raise EquipError
+        except OutOfError:
+            print(f"It doesn't look like you have any {item}.")
+            exit()
 
     def use(self, item: str):
 
@@ -320,8 +327,6 @@ class Items:
             box = self.is_box(item_file)
             fixture = self.is_fixture(item_file)
             number = self.list[item]["quantity"]
-#             if fixture or box:
-#                 raise IsFixture(item)
 
             # Only decrease quantity if item is consumable
             if instance.consumable:
