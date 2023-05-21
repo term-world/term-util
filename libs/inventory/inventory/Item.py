@@ -161,9 +161,3 @@ class IsFixture(Exception):
 
     def __init__(self, item:str, *args):
         super().__init__(args)
-
-class EquipError(Exception):
-    def __init__(self, item:str, *args):
-        super().__init__(args)
-        print("Can't equip {item}.")
-        exit()

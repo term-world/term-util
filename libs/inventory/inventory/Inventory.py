@@ -17,11 +17,11 @@ from .Item import ItemSpec
 from .Item import FixtureSpec
 from .Item import BoxSpec
 from .Item import OutOfError
-from .Item import EquipError
 from .Item import IsFixture
 from .Item import Factory
 
 from .Validation import Validator
+from .Equipment import EquipError
 
 PATH = f'{Config.values["INV_PATH"]}/{Config.values["INV_REGISTRY"]}'
 
@@ -50,6 +50,9 @@ class Acquire:
 
     def is_box(self, item) -> bool:
         self.box = "BoxSpec" in dir(item)
+    
+    def is_relic(self, item) -> bool:
+        self.relic = "RelicSpec" in dir(item)
 
     def locate(self, filename: str = "") -> None:
         self.name, self.ext = self.filename.split("/")[-1].split(".")
@@ -62,7 +65,7 @@ class Acquire:
             path = os.path.expanduser(
                 f'{Config.values["INV_PATH"]}/{self.filename}'
             )
-            if not self.box:
+            if not self.box or not self.relic:
                 try:
                     shutil.copy(self.filename, path)
                 except:
@@ -188,13 +191,13 @@ class List:
         table.add_column("Volume")
         table.add_column("Equippable")
         table.add_column("Durability")
+        table.add_column("Equipped")
 
         for item in self.inventory:
             table.add_row(
                 item,
                 str(self.inventory[item]["quantity"]),
                 str(self.is_consumable(item).consumable),
-                # TODO: Is it necessary to use the consumable status to derive VOLUME?
                 str(self.is_consumable(item).VOLUME * self.inventory[item]["quantity"]),
                 str(self.is_consumable(item).equippable),
                 self.qualify_durability(self.is_consumable(item))
@@ -231,7 +234,7 @@ class List:
         for rank in ratings:
             if item.durability >= ratings[rank]:
                 return rank
-            return "Broken"
+        return "Broken"
 
 class Items:
 
@@ -297,7 +300,7 @@ class Items:
             if not item in self.list:
                 raise OutOfError
             if not self.__is_equippable(item):
-                raise EquipError
+                raise Equipment.EquipError
         except OutOfError:
             print(f"It doesn't look like you have any {item}.")
             exit()
@@ -325,6 +328,7 @@ class Items:
         # Test type of item; remove if ItemSpec
         try:
             box = self.is_box(item_file)
+            relic = self.is_relic(item_file)
             fixture = self.is_fixture(item_file)
             number = self.list[item]["quantity"]
 
