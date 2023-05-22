@@ -58,10 +58,25 @@ class Equipment:
         })
         return q.ask()
 
+    def __review_slots(self) -> dict:
+        for slot in self.equipped:
+            try:
+                yield {
+                    slot: list(self.equipped[slot].values())
+                }
+            except (TypeError, AttributeError):
+                yield {slot: [self.equipped[slot]]}
+    
+    def __update_equipped(self) -> None:
+        with open(self.EQUIPMENT_FILE, "w") as fh:
+            json.dump(self.equipped, fh)
+
     def equip(self, item: str = "") -> None:
         name = item.split(".")[0]
         item_file = import_module(name)
         obj = getattr(item_file, item)()
+        if "RelicSpec" not in dir(obj):
+            raise EquipError(item)
         if self.__verify_slot(slot = obj.slot):
             try:
                 if obj.slot in ["hand", "leg", "foot"]:
@@ -71,14 +86,22 @@ class Equipment:
                     self.equipped[obj.slot] = name 
             except KeyError:
                 raise InvalidSlotError
-        with open(self.EQUIPMENT_FILE, "w") as fh:
-            json.dump(self.equipped, fh)
+            self.__update_equipped()
 
-    def unequip(self, slot) -> None:
-        try:
-            self.equipped[slot] = None
-        except KeyError:
-            raise InvalidSlotError
+    def unequip(self, item: str = "") -> None:
+        for slot in self.__review_slots():
+            loc = next(iter(slot.keys()))
+            if item in slot[loc]:
+                if type(self.equipped[loc]) == dict:
+                    sub_slot = list(
+                        self.equipped[loc].keys()
+                    )[list(
+                        self.equipped[loc].values()
+                    ).index(item)]
+                    self.equipped[loc][sub_slot] = None
+                else:
+                    self.equipped[loc] = None
+        self.__update_equipped()
 
 class EquipError(Exception):
     def __init__(self, item:str, *args):
