@@ -1,5 +1,5 @@
-import os
 import re
+import getpass
 
 from datetime import datetime
 
@@ -17,7 +17,7 @@ class Library(Record):
         try:
             kwargs["owners"] = [owner for owner in kwargs["owners"]]
         except KeyError:
-            kwargs["owners"] = [os.getlogin()]
+            kwargs["owners"] = [getpass.getuser()]
         kwargs["nice_name"] = kwargs["name"]
         kwargs["lib_name"] = re.sub(
             r'[^a-zA-Z0-9]', '', kwargs["name"]
@@ -41,7 +41,7 @@ class Version(Record):
         try:
             kwargs["author"]
         except KeyError:
-            kwargs["author"] = os.getlogin()
+            kwargs["author"] = getpass.getuser()
         kwargs["date"] = datetime.now().timestamp()
         kwargs["version"] = f"v{len(library.versions) + 1}"
         self.generate(kwargs)

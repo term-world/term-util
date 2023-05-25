@@ -57,7 +57,7 @@ class Package:
         if not os.path.isdir(self.name):
             shutil.rmtree(self.name)
 
-    def unpack(self, checksum: str = ""):
+    def verify(self, checksum: str = ""):
         # TODO: What happens if no file shows up? ERR!
         pack = self.pkgfile
         with open(pack, "rb") as fh:
@@ -66,21 +66,19 @@ class Package:
             checksum.split("md5-")[1]
         ).hex()
         if chex != md5(data).hexdigest():
-            # TODO: Potentially delete the file? It's a bad actor somehow
-            # TODO: Implement proper error handling with special exception
-            print("Checksums unequal! Exiting.")
+            print(chex)
+            print(md5(data).hexdigest())
+            print("Downloaded file different from market version! Exiting.")
+            #os.unlink(f"{self.name}.pyz")
             exit()
-        with open(pack, "wb") as fh:
-            fh.write(base64.b64decode(data))
 
     def retrieve(self, doc_id: str = "") -> None:
         pack = self.files[0]
         conn = Connection("marketplace")
         # TODO: Determine whether or not we need to get the attachment
         #       md5 here, too -- seems...wasteful?
-        db_check = conn.request.get(doc_id)["_attachments"][self.pkgfile]["digest"]
-        b64bin = conn.request.get(f"{doc_id}/{self.pkgfile}")
-        print(len(b64bin))
+        binary = conn.request.download(f"{doc_id}/{self.pkgfile}")
+        checksum = conn.request.get(doc_id)["_attachments"][self.pkgfile]["digest"]
         with open(f"{self.name}.pyz", "wb") as fh:
-            fh.write(bytes(b64bin, 'utf-8'))
-        self.unpack(db_check)
+            fh.write(binary)
+        self.verify(checksum)
