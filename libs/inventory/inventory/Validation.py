@@ -9,7 +9,7 @@ class Validator:
     def validate(filename: str = "") -> bool:
         try:
             name, ext = filename.split("/")[-1].split(".")
-            if not ext == "py":
+            if not ext in ["py","pyz"]:
                 raise
             obj = importlib.import_module(name)
             getattr(obj, name)().use

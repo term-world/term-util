@@ -4,7 +4,6 @@ setuptools.setup(
     name="gitit",
     version="0.1",
     packages=['gitit'],
-    package_dir={'gitit': 'src'},
     include_package_data=True,
     description='Limited module for writing (not cloning) raw files from GitHub.',
     long_description=open('README.md', 'r').read(),
