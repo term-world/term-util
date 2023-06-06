@@ -30,7 +30,7 @@ class Package:
     def entrypoint(self) -> None:
         """ Designates title file as entrypoint """
         with open(f"{self.name}/{self.name}.py", "a") as fh:
-            fh.write(f"""\
+            fh.write(f"""
 if __name__ == "{self.name}":
     {self.name}().use()""")
 
