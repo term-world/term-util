@@ -30,8 +30,9 @@ class Package:
     def entrypoint(self) -> None:
         """ Designates title file as entrypoint """
         with open(f"{self.name}/{self.name}.py", "a") as fh:
-            fh.write(f"""\nif __name__ == "{self.name}":
-                {self.name}().use()""")
+            fh.write(f"""
+if __name__ == "{self.name}":
+    {self.name}().use()""")
 
     def make(self, options: dict = {}) -> None:
         """ Makes *.pyz file for object """
