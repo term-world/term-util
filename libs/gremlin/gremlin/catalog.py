@@ -1,13 +1,14 @@
 from couchsurf import Connection
 
-class Entry:
+class Entry: # creates a class 'Entry'
 
-    def __init__(self, name: str = "", **kwargs):
-        self.conn = Connection("relics")
+    def __init__(self, name: str = "", **kwargs): 
+        ''' initializes the attributes of Entry objects'''
+        self.conn = Connection("relics") # connects an NPC entry to a relic?
         self.data = self.__query(name = name)
-        if len(self.data) > 1:
+        if len(self.data) > 1: # if 
             print("Whoa, whoa! Too much magic is none at all!")
-        if not self.data:
+        if not self.data: # 
             self.__register(name = name, **kwargs)
             self.data = self.__query(name=name)
     
