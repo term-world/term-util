@@ -25,6 +25,7 @@ class Persona:
         self.prompts = []
         self.set_persona_greet(greeting)
         self.set_system_prompt(system)
+        self.user_question_string(">>> ")
 
     def __is_prompted(self) -> bool:
         for value in self.prompts:
@@ -99,7 +100,7 @@ class Persona:
             print("I have no system prompt. Perhaps my creator should give me one.")
             return
         while True:
-            question = input("? ") 
+            question = input(self.user_question_string) 
             if question.lower() == "q":
                 self.query("Goodbye.")
                 break
