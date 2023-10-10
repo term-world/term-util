@@ -8,8 +8,6 @@ from rich.markdown import Markdown
 
 from arglite import parser as cliarg
 
-from .motd import *
-
 API = {
     "key": os.getenv("OPEN_AI_KEY"),
     "org": os.getenv("OPEN_AI_ORG")
@@ -20,12 +18,13 @@ openai.api_org = API["org"]
 
 class Persona:
 
-    def __init__(self, prompt: str = ""):
+    def __init__(self, system: str = "", greeting: str = ""):
         self.console = Console()
         self.chars = 0
         self.offset = 0
         self.prompts = []
-        self.set_system_prompt(prompt)
+        self.set_persona_greet(greeting)
+        self.set_system_prompt(system)
 
     def __is_prompted(self) -> bool:
         for value in self.prompts:
@@ -38,6 +37,10 @@ class Persona:
             self.prompts.append(
                 {"role": "system", "content": prompt}
             )
+
+    def set_persona_greet(self, greeting: str = "") -> None:
+        if greeting:
+            self.greeting = greeting
 
     def parse_stream(self, responses: dict = {}) -> str:
         """ Generator creating chunks from read stream """
@@ -85,10 +88,10 @@ class Persona:
 
     def motd(self) -> None:
         """ turns response into markdown format """
-        self.render(msg)
+        self.render(self.greeting)
 
     def chat(self) -> None:
-        """ allows user to interact with cliv3 """
+        """ Allows user to carry on a chat with the Persona """
         # Outward-facing user greeting dialog. This is _not_ the system prompt.
         self.motd()
         # Checks if a system prompt has been provided; if not, inform and bail
@@ -98,6 +101,6 @@ class Persona:
         while True:
             question = input("? ") 
             if question.lower() == "q":
-                print("Goodbye.")
+                self.query("Goodbye.")
                 break
             self.query(question)
