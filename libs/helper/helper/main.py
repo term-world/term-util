@@ -26,6 +26,7 @@ class Persona:
         self.set_persona_greet(greeting)
         self.set_system_prompt(system)
         self.user_question_string = ">>> "
+        self.persona_goodbye = "Goodbye."
 
     def __is_prompted(self) -> bool:
         for value in self.prompts:
@@ -102,6 +103,6 @@ class Persona:
         while True:
             question = input(self.user_question_string) 
             if question.lower() == "q":
-                self.query("Goodbye.")
+                self.query(self.persona_goodbye)
                 break
             self.query(question)

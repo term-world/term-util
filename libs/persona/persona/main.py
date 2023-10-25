@@ -25,7 +25,8 @@ class Persona:
         self.prompts = []
         self.set_persona_greet(greeting)
         self.set_system_prompt(system)
-        self.user_question_string(">>> ")
+        self.user_question_string = ">>> "
+        # self.user_question_string(">>> ")
 
     def __is_prompted(self) -> bool:
         for value in self.prompts:

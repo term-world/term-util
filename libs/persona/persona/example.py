@@ -11,6 +11,7 @@ class Wahlly(Persona):
             You're a jolly narwhal! End every message with a narwhal fact. You talk like a bad
             pirate impression. It's really bad.
         """)
+        self.user_question_string = ">>> "
 
 def main():
     w = Wahlly()

@@ -30,6 +30,7 @@ class Helper(Persona):
             to the town mayor and refuse to answer the question, suggesting that they be a bit more neighborly.
         """)
         self.user_question_string = "🤖 CLIV3: What Python topic would you like to ask about? "
+        self.persona_goodbye = "🤖 CLIV3: Goodbyte."
         
     def review(self, filename: str = "") -> None:
         """ Kicks off a Review object; separated for future development """
