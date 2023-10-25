@@ -1,5 +1,7 @@
+import os
 import json
 import base64
+import pickle
 import requests
 
 class Request:
@@ -72,6 +74,18 @@ class Request:
         result = self.post(query, "_find")
         return result
 
+    def download(self, endpoint: str = "") -> bytes:
+        filebytes = []
+        response = requests.get(
+            f'http://{self.auth}/{self.name}/{endpoint}',
+            headers = self.headers,
+            stream = True
+        )
+        for chunk in response.iter_content(chunk_size = 1024):
+            if chunk:
+                filebytes.append(chunk)
+        return b''.join(filebytes)
+
     def put(self, doc_id: str = "", doc: dict = {}, **kwargs) -> dict:
         request_uri = f'http://{self.auth}/{self.name}/{doc_id}'
         response = requests.put(
@@ -81,21 +95,31 @@ class Request:
         )
         confirmation = json.loads(response.text)
         if "attachment" in kwargs:
-            with open(kwargs["attachment"], 'rb') as fh:
-                updated_doc["_attachments"] = {
-                    f'{kwargs["attachment"]}': {
-                        "data": base64.b64encode(
-                            fh.read()
-                        ).decode('utf-8')
-                    }
-                }
+            # Check if attachment is a file, if so: read
+            if os.path.isfile(kwargs["attachment"]):
+                with open(kwargs["attachment"], 'rb') as fh:
+                    data = fh.read()
+                self.headers["Content-Type"] = "application/zip"
+            else:
+                # If the attachment is a bytes-like object, upload
+                try:
+                    if not type(kwargs["attachment"]) == bytes:
+                        raise
+                    if "name" not in kwargs:
+                        print("Please provide a name parameter!")
+                        exit()
+                    data = kwargs["attachment"]
+                    kwargs["attachment"] = kwargs["name"]
+                except Exception as e:
+                    print("Must be bytes-like or a file!")
+                    exit()
+                self.headers["Content-Type"] = "application/octet-stream"
             request_uri += f'/{kwargs["attachment"]}'
             self.headers["If-Match"] = confirmation["rev"]
-            self.headers["Content-Type"] = "application/zip"
             response = requests.put(
                 request_uri,
                 headers = self.headers,
-                data = json.dumps(updated_doc["_attachments"][kwargs["attachment"]]["data"])
+                data = data
             )
             confirmation = json.loads(response.text)
         return confirmation
