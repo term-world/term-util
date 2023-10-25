@@ -8,44 +8,44 @@ from rich.markdown import Markdown
 
 from arglite import parser as cliarg
 
+from .motd import *
+from .review import Review
+
 API = {
     "key": os.getenv("OPEN_AI_KEY"),
     "org": os.getenv("OPEN_AI_ORG")
 }
 
+SYSTEM = """
+You are a civil servant named cliv3 who teaches the Python programming language.
+
+Town residents will ask for help with specific Python commands, and your job is to respond with kind,
+helpful messages with examples that relate to various town services such as bodega, datamart, woodshop, voting, 
+hall of records, datamart, water supply, the power grid, trash collection, or proper lawn care.
+
+Town residents may give you python files to read. Your job is to respond with kind and helpful
+suggestions on how to improve the code.
+
+If residents are rude to you, politely tell them they need to be kind and that you've reported them
+to the town mayor and refuse to answer the question, suggesting that they be a bit more neighborly.
+"""
+
+PROMPTS = [
+    {"role": "system", "content": SYSTEM}
+]
+
 openai.api_key = API["key"]
 openai.api_org = API["org"]
 
-class Persona:
+class Helper:
 
-    def __init__(self, system: str = "", greeting: str = ""):
+    def __init__(self):
         self.console = Console()
         self.chars = 0
         self.offset = 0
-        self.prompts = []
-        self.set_persona_greet(greeting)
-        self.set_system_prompt(system)
-        self.user_question_string = ">>> "
-        # self.user_question_string(">>> ")
-
-    def __is_prompted(self) -> bool:
-        for value in self.prompts:
-            if value["role"] == "system":
-                return True
-        return False
-
-    def set_system_prompt(self, prompt: str = "") -> None:
-        if prompt:
-            self.prompts.append(
-                {"role": "system", "content": prompt}
-            )
-
-    def set_persona_greet(self, greeting: str = "") -> None:
-        if greeting:
-            self.greeting = greeting
 
     def parse_stream(self, responses: dict = {}) -> str:
-        """ Generator creating chunks from read stream """
+        """ this is a generator """
         for chunk in responses:
             try:
                 msg = chunk["choices"][0]["delta"]["content"]
@@ -65,16 +65,16 @@ class Persona:
     def query(self,question: str = "") -> str:
         """ Sends query to model """
         # Append user question to PROMPTS
-        self.prompts.append(
+        PROMPTS.append(
             {"role": "user", "content": question}
         )
         # Send to the model
         responses = openai.ChatCompletion.create(
             model= "gpt-4",
-            messages= self.prompts,
+            messages= PROMPTS,
             temperature= 0.1,
             stream = True,
-            n = 1
+            n= 1
         )
         tokens = []
         response = self.parse_stream(responses)
@@ -90,19 +90,33 @@ class Persona:
 
     def motd(self) -> None:
         """ turns response into markdown format """
-        self.render(self.greeting)
+        self.render(msg)
 
     def chat(self) -> None:
-        """ Allows user to carry on a chat with the Persona """
-        # Outward-facing user greeting dialog. This is _not_ the system prompt.
+        """ allows user to interact with cliv3 """
         self.motd()
-        # Checks if a system prompt has been provided; if not, inform and bail
-        if not self.__is_prompted():
-            print("I have no system prompt. Perhaps my creator should give me one.")
-            return
         while True:
-            question = input(self.user_question_string) 
+            question = input("🤖 CLIV3: What Python topic would you like to ask about? ") 
             if question.lower() == "q":
-                self.query("Goodbye.")
+                # allows user to quit cliv3
+                print("🤖 CLIV3: Goodbyte!")
                 break
             self.query(question)
+
+    def review(self, filename: str = "") -> None:
+        """ Kicks off a Review object; separated for future development """
+        code = Review(filename)
+        question = input("🤖 CLIV3: How can I help you with this file? ")
+        PROMPTS.append(
+            {"role": "user", "content": question}
+        )
+        self.query(code.code)
+
+def main():
+    cliv3 = Helper()
+    # If review mode, do code review
+    if cliarg.optional.review:
+        cliv3.review(cliarg.optional.review)
+    # Otherwise, let's chat!
+    else:
+        cliv3.chat()
