@@ -1,108 +1,37 @@
 import os
-import openai
-import json
-
-from os import path
-from rich.console import Console
-from rich.markdown import Markdown
 
 from arglite import parser as cliarg
 
-from .motd import *
-from .review import Review
+from main import Persona
+from review import Review
 
-API = {
-    "key": os.getenv("OPEN_AI_KEY"),
-    "org": os.getenv("OPEN_AI_ORG")
-}
-
-SYSTEM = """
-You are a civil servant named cliv3 who teaches the Python programming language.
-
-Town residents will ask for help with specific Python commands, and your job is to respond with kind,
-helpful messages with examples that relate to various town services such as bodega, datamart, woodshop, voting, 
-hall of records, datamart, water supply, the power grid, trash collection, or proper lawn care.
-
-Town residents may give you python files to read. Your job is to respond with kind and helpful
-suggestions on how to improve the code.
-
-If residents are rude to you, politely tell them they need to be kind and that you've reported them
-to the town mayor and refuse to answer the question, suggesting that they be a bit more neighborly.
-"""
-
-PROMPTS = [
-    {"role": "system", "content": SYSTEM}
-]
-
-openai.api_key = API["key"]
-openai.api_org = API["org"]
-
-class Helper:
+class Helper(Persona):
 
     def __init__(self):
-        self.console = Console()
-        self.chars = 0
-        self.offset = 0
+        super().__init__()
+        self.set_persona_greet("""
+        ##  cliv3 v.0.1.0: the term-world helper!
+        
+        *Enter 'Q' at any prompt to quit the helper*
 
-    def parse_stream(self, responses: dict = {}) -> str:
-        """ this is a generator """
-        for chunk in responses:
-            try:
-                msg = chunk["choices"][0]["delta"]["content"]
-                yield msg
-            except KeyError:
-                pass
-
-    def render(self, response: str = "") -> None:
-        """ Renders text as Markdown in the terminal """
-        markdown = Markdown(f"\r{response}")
-        self.console.print(
-            markdown,
-            soft_wrap = False,
-            end = '\r'
-        )
-
-    def query(self,question: str = "") -> str:
-        """ Sends query to model """
-        # Append user question to PROMPTS
-        PROMPTS.append(
-            {"role": "user", "content": question}
-        )
-        # Send to the model
-        responses = openai.ChatCompletion.create(
-            model= "gpt-4",
-            messages= PROMPTS,
-            temperature= 0.1,
-            stream = True,
-            n= 1
-        )
-        tokens = []
-        response = self.parse_stream(responses)
-        for token in response:
-            # Retrieve and print content from response 
-            if self.parse_stream():
-                # Stream the response as it's being created
-                tokens.append(token)
-                print(token, end="", flush=True)
-        # Clear console and render
-        self.console.clear()
-        self.render("".join(tokens))
-
-    def motd(self) -> None:
-        """ turns response into markdown format """
-        self.render(msg)
-
-    def chat(self) -> None:
-        """ allows user to interact with cliv3 """
-        self.motd()
-        while True:
-            question = input("🤖 CLIV3: What Python topic would you like to ask about? ") 
-            if question.lower() == "q":
-                # allows user to quit cliv3
-                print("🤖 CLIV3: Goodbyte!")
-                break
-            self.query(question)
-
+        *To access Code Review, go to the desired folder in your terminal before opening Helper,
+        then enter "code review".*
+        """)
+        self.set_system_prompt("""
+            You are a civil servant named cliv3 who teaches the Python programming language.
+            Town residents will ask for help with specific Python commands, and your job is to respond with kind,
+            helpful messages with examples that relate to various town services such as bodega, datamart, woodshop, voting, 
+            hall of records, datamart, water supply, the power grid, trash collection, or proper lawn care.
+            
+            Town residents may give you python files to read. Your job is to respond with kind and helpful
+            suggestions on how to improve the code.
+            
+            If residents are rude to you, politely tell them they need to be kind and that you've reported them
+            to the town mayor and refuse to answer the question, suggesting that they be a bit more neighborly.
+        """)
+        self.user_question_string = "🤖 CLIV3: What Python topic would you like to ask about? "
+        self.persona_goodbye = "🤖 CLIV3: Goodbyte."
+        
     def review(self, filename: str = "") -> None:
         """ Kicks off a Review object; separated for future development """
         code = Review(filename)
@@ -120,3 +49,7 @@ def main():
     # Otherwise, let's chat!
     else:
         cliv3.chat()
+
+if __name__ == "__main__":
+    main()
+    
