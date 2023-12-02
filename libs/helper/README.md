@@ -6,8 +6,29 @@ Python examples in the style of a system persona. This persona is currently writ
 
 ## getting `help`er
 
-Contrary to other `term-util` libraries, `helper` installs as a `CLI` interface. It can be
-integrated into other files and/or assignments where necessary:
+Unlike other `term-world` utilities, `helper` installs as a `CLI` command. To use `helper` in 
+an environment, type `helper` and follow the prompts.
+
+### Development
+
+To install a development version of `helper`, use `pip`:
+
+```bash
+python -m pip install -e .
+```
+
+#### `CLI`
+
+The default install location for the development `CLI` is `~/.local/bin`. You may need to add
+this location to your `.bashrc` file (for Unix):
+
+```bash
+export PATH="/PATH/TO/YOUR/HOME/.local/bin:$PATH"
+```
+
+#### Module
+
+`helper` can be integrated into other files and/or assignments where necessary:
 
 ```python
 from helper import Helper
