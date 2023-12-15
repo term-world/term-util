@@ -1,9 +1,8 @@
-import os
+from persona import Persona
 
 from arglite import parser as cliarg
 
-from main import Persona
-from review import Review
+from .review import Review
 
 class Helper(Persona):
 
@@ -13,9 +12,6 @@ class Helper(Persona):
         ##  cliv3 v.0.1.0: the term-world helper!
         
         *Enter 'Q' at any prompt to quit the helper*
-
-        *To access Code Review, go to the desired folder in your terminal before opening Helper,
-        then enter "code review".*
         """)
         self.set_system_prompt("""
             You are a civil servant named cliv3 who teaches the Python programming language.
@@ -29,8 +25,12 @@ class Helper(Persona):
             If residents are rude to you, politely tell them they need to be kind and that you've reported them
             to the town mayor and refuse to answer the question, suggesting that they be a bit more neighborly.
         """)
-        self.user_question_string = "🤖 CLIV3: What Python topic would you like to ask about? "
         self.persona_goodbye = "🤖 CLIV3: Goodbyte."
+
+    def chat(self) -> None:
+        """ allows user to interact with cliv3 """
+        self.user_question_string = ("🤖 CLIV3: What Python topic would you like to ask about? ")
+        super().chat()
         
     def review(self, filename: str = "") -> None:
         """ Kicks off a Review object; separated for future development """
