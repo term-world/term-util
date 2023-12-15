@@ -118,7 +118,7 @@ class Listing:
         """ Yanks (deletes) a library or version owned by requesting user """
         match = Query(
             lib_name = name,
-            owners = [os.getlogin()]
+            owners = [getpass.getuser()]
         )
         if match:
             print(match.result)
