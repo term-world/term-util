@@ -1,6 +1,7 @@
 import os
 import openai
 import json
+import random
 
 from os import path
 from rich.console import Console
@@ -17,6 +18,7 @@ openai.api_key = API["key"]
 openai.api_org = API["org"]
 
 class Persona:
+    # controls personalities only -> NOT fighting
 
     def __init__(self, system: str = "", greeting: str = ""):
         self.console = Console()
@@ -26,7 +28,7 @@ class Persona:
         self.set_persona_greet(greeting)
         self.set_system_prompt(system)
         self.user_question_string = ">>> "
-        # self.user_question_string(">>> ")
+        self.health_bar = 10
 
     def __is_prompted(self) -> bool:
         for value in self.prompts:
