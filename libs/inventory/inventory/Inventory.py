@@ -117,29 +117,50 @@ class List:
         self.path = os.path.expanduser(
             f'{Config.values["INV_PATH"]}'
         )
-        try:
-            self.conn = sqlite3.connect(os.path.expanduser(PATH))
-        except sqlite3.OperationalError:
-            # Database doesn't exist; translate the former registry file
-            if os.path.exists(f"{self.path}/.registry"):
-                self.__convert_json_file()
-                #os.unlink(f"{self.path}/.registry")
+        #try:
+        self.conn = sqlite3.connect(
+            os.path.expanduser(PATH)
+        )
+        self.__create_sql_table()
+        if os.path.exists(f"{self.path}/.registry"):
+            self.__convert_json_file()
+            #os.unlink(f"{self.path}/.registry")
 
     # Representation
     def __str__(self) -> str:
         return json.dumps(self.inventory)
 
-    def __convert_json_file(self):
+    def __create_sql_table(self):
         cursor = self.conn.cursor()
-        print(self.conn)
         cursor.execute(
             """
                 CREATE TABLE IF NOT EXISTS items (
-                )
+                    name TEXT,
+                    filename TEXT,
+                    quantity REAL,
+                    volume REAL
+                );
             """
         )
-        with open(PATH, "r") as fh:
+
+    def __convert_json_file(self):
+        with open(os.path.expanduser(
+                f'{Config.values["INV_PATH"]}/.registry'
+            ), "r") as fh:
             data = json.load(fh)
+        cursor = self.conn.cursor()
+        for item in data:
+            cursor.execute(
+                """
+                    INSERT INTO items(name, filename, quantity, volume)
+                    VALUES(?, ?, ?, ?);
+                """
+            , (item,
+               data[item]["filename"],
+               data[item]["quantity"],
+               data[item]["volume"])
+            )
+            self.conn.commit()
 
     def write(self) -> None:
         self.empties()
@@ -207,7 +228,7 @@ class List:
     def display(self):
         table = Table(title=f"{os.getenv('LOGNAME')}'s inventory")
         # Write latest inventory ahead of printing table
-        self.write()
+        #self.write()
         # Remove all entries without corresponding files
         self.cleanup_items()
         table.add_column("Item name")
