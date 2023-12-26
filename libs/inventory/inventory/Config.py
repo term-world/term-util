@@ -4,4 +4,4 @@ class Config:
 
   values = {}
   values["INV_PATH"] = "~/.inv"
-  values["INV_REGISTRY"] = ".registry"
+  values["INV_REGISTRY"] = ".registry.inv"

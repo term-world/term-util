@@ -5,6 +5,7 @@ import json
 import argparse
 import importlib
 import shutil
+import sqlite3
 
 from rich.table import Table
 from rich.console import Console
@@ -56,28 +57,6 @@ class Acquire:
         self.box = Validator.is_box(self.name)
         self.filename = f"{self.name}.{self.ext}"
 
-    def validate(self) -> bool:
-        """ DEPRECATED: Use Validator module """
-        # TODO: Move validation to the item level?
-        #       I see a distinct issue with attempting to
-        #       import from the file itself, though
-
-        # Check to see if the item is usable and
-        # remove extra numbering from the filename
-        try:
-            self.name, self.ext = self.filename.split(".")
-            if not self.ext == "py":
-                raise
-            obj = importlib.import_module(self.name)
-            getattr(obj, self.name)().use
-            self.is_box(obj)
-            # Reset the filename without appended digits if a
-            # multiple/copy from drop
-        except Exception as e:
-            print("Not a valid item file")
-            return False
-        return True
-
     def move(self):
         try:
             path = os.path.expanduser(
@@ -116,6 +95,9 @@ class Acquire:
 class List:
 
     # File operations
+    """
+    DEPRECATED: Transitioning to SQLite3 database to accommodate the
+                equippable invetory system for adventure.
 
     def __init__(self):
         self.inventory = {}
@@ -128,11 +110,36 @@ class List:
             self.inventory = json.load(fh)
             fh.close()
         except: pass
+    """
+
+    def __init__(self):
+        self.inventory = {}
+        self.path = os.path.expanduser(
+            f'{Config.values["INV_PATH"]}'
+        )
+        try:
+            self.conn = sqlite3.connect(os.path.expanduser(PATH))
+        except sqlite3.OperationalError:
+            # Database doesn't exist; translate the former registry file
+            if os.path.exists(f"{self.path}/.registry"):
+                self.__convert_json_file()
+                #os.unlink(f"{self.path}/.registry")
 
     # Representation
-
     def __str__(self) -> str:
         return json.dumps(self.inventory)
+
+    def __convert_json_file(self):
+        cursor = self.conn.cursor()
+        print(self.conn)
+        cursor.execute(
+            """
+                CREATE TABLE IF NOT EXISTS items (
+                )
+            """
+        )
+        with open(PATH, "r") as fh:
+            data = json.load(fh)
 
     def write(self) -> None:
         self.empties()
