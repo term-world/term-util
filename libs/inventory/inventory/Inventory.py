@@ -22,6 +22,7 @@ from .Item import IsFixture
 from .Item import Factory
 
 from .Validation import Validator
+from .Instantiator import Instance
 
 PATH = f'{Config.values["INV_PATH"]}/{Config.values["INV_REGISTRY"]}'
 
@@ -80,11 +81,12 @@ class Acquire:
 
     def add(self):
         item = self.filename.replace(".py", "")
-        item_volume = list.is_consumable(item).VOLUME * self.quantity
-        current_volume = list.total_volume() + item_volume
+        # TODO: is_consumable renamed and total_volume calculated differently
+        item_volume = registry.is_consumable(item).VOLUME * self.quantity
+        current_volume = registry.total_volume() + item_volume
         if MAX_VOLUME >= current_volume:
             try:
-                list.add(self.name, self.quantity)
+                registry.add(self.name, self.quantity)
             except Exception as e:
                 print(f"Couldn't acquire {self.name}")
                 exit()
@@ -92,7 +94,7 @@ class Acquire:
             print(f"Couldn't acquire {self.quantity} {self.name}: Max Volume exceeded")
             exit()
 
-class List:
+class Registry:
 
     # File operations
     def __init__(self):
@@ -153,6 +155,7 @@ class List:
         consumable: int = 1
     ):
         cursor = self.conn.cursor()
+        instance = Instantiator.instantiator(filename)
         cursor.execute(
             """
                 INSERT INTO items(name, filename, quantity, weight, consumable)
@@ -209,7 +212,6 @@ class List:
         self.add(item = item, number = number)
 
     # Automatically remove empty or negative quantity items
-
     def empties(self) -> None:
         cursor = self.conn.cursor()
         cursor.execute(
@@ -238,11 +240,10 @@ class List:
             os.unlink(f"{path}/{file}")
 
     # Create a nice(r) display
-
     def display(self):
         table = Table(title=f"{os.getenv('LOGNAME')}'s inventory")
         # Remove all entries without corresponding files
-        # self.cleanup_items()
+        self.cleanup_items()
         table.add_column("Item name")
         table.add_column("Item count")
         table.add_column("Item file")
@@ -259,7 +260,7 @@ class List:
                 str(name),
                 str(quantity),
                 str(filename),
-                str(consumable),
+                str(True if consumable else False),
                 str(volume)
             )
 
@@ -268,26 +269,11 @@ class List:
         console.print(table)
         print(f"Your current total volume limit is: {self.total_volume()}/{MAX_VOLUME}\n")
 
-    # Returns a boolean whether the item object is a consumable
-
-    def is_consumable(self, item: str) -> list:
-
-        try:
-            item_file = importlib.import_module(f"{item}")
-        except ModuleNotFoundError:
-            exit()
-        try:
-            instance = getattr(item_file, item)()
-        except:
-            print(f"{item} doesn't seem to be a valid object.")
-            exit()
-        return instance
-
 class Items:
 
-    def __init__(self, list):
-        self.inv = list
-        self.list = list.inventory
+    def __init__(self, registry):
+        self.inv = registry
+        self.registry = registry.inventory
 
     def is_fixture(self, item) -> bool:
         return "FixtureSpec" in dir(item)
@@ -299,7 +285,7 @@ class Items:
         return os.path.exists(f"{self.inv.path}/{item}.py")
 
     def registry_exists(self, item) -> bool:
-        for element in self.list:
+        for element in self.registry:
             if element == item:
                 return True
         return False
@@ -311,22 +297,22 @@ class Items:
         except ValueError:
             quantity = 1
         try:
-            list.add(item, 0 - int(quantity))
+            registry.add(item, 0 - int(quantity))
         except:
             pass
 
     def drop(self, item: str = "", quantity: int = 1) -> None:
         """ Drops item copy in current directory; removes from inventory """
         try:
-            if not item in self.list:
+            if not item in self.registry:
                 raise OutOfError(item)
             # Convert the quantity to an integer if not already one
             quantity = int(quantity)
             # Test if the number being dropped is more than we have
             # and limit the drops to only the quantity that we actually
             # can drop
-            if quantity > self.list[item]["quantity"]:
-                quantity = self.list[item]["quantity"]
+            if quantity > self.registry[item]["quantity"]:
+                quantity = self.registry[item]["quantity"]
         except OutOfError:
             print(f"It doesn't look like you have any {item}.")
             exit()
@@ -335,7 +321,7 @@ class Items:
         try:
             for _ in range(quantity):
                 Factory(item)
-            list.add(item, 0 - int(quantity))
+            registry.add(item, 0 - int(quantity))
         except:
             pass
 
@@ -363,13 +349,13 @@ class Items:
         try:
             box = self.is_box(item_file)
             fixture = self.is_fixture(item_file)
-            number = self.list[item]["quantity"]
+            number = self.registry[item]["quantity"]
 #             if fixture or box:
 #                 raise IsFixture(item)
 
             # Only decrease quantity if item is consumable
             if instance.consumable:
-                list.remove(item)
+                registry.remove(item)
             if number <= 0:
                 raise OutOfError(item)
         except (KeyError, OutOfError) as e:
@@ -383,11 +369,9 @@ class Items:
         else:
             return instance.use(**instance.actions)
 
-# Create instances to use as shorthand
-# I thought this was a bad idea, but this
-# is actually how the random module works
-
+# Create instances to use as shorthand. I thought this was a bad idea,
+# but this is actually how the random module works:
 # https://github.com/python/cpython/blob/main/Lib/random.py
 
-list = List()
-items = Items(list)
+registry = Registry()
+items = Items(registry)
