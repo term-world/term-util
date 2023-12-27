@@ -220,19 +220,22 @@ class List:
         for name, filename in cursor.fetchall():
             self.__delete_table_entry(name, filename)
 
-    # Completely removes all items in .inv not listed in the .registry file
-
+    # Completely removes all items in .inv, but not in registry file
     def cleanup_items(self) -> None:
-        tempdict = {}
-        path = os.path.expanduser("~/.inv/")
-        for item in os.listdir(path):
-            if ".py" in item:
-                tempdict.update({item: "null"})
-            for element in self.inventory:
-                if f"{element}.py" in item:
-                    tempdict.pop(item)
-        for item in tempdict:
-            os.remove(os.path.expanduser(f"~/.inv/{item}"))
+        cursor = self.conn.cursor()
+        path = os.path.expanduser(
+            Config.values["INV_PATH"]
+        )
+        files = [item for item in os.listdir(path) if item.endswith(".py")]
+        cursor.execute(
+            """
+                SELECT filename from items;
+            """
+        )
+        items = [file for (file,) in cursor.fetchall()]
+        cleanups = set(files) - set(items)
+        for file in cleanups:
+            os.unlink(f"{path}/{file}")
 
     # Create a nice(r) display
 
