@@ -8,6 +8,7 @@ class Instance:
             item_file = importlib.import_module(f"{item}")
             self.instance = getattr(item_file, item)()
         except ModuleNotFoundError:
+            print(f"It seems you don't have any {item}.")
             exit()
         except:
             print(f"{item} doesn't seem to be a valid object.")
@@ -20,3 +21,9 @@ class Instance:
         except:
             pass
         return False
+
+    def get_property(self, prop: str = ""):
+        try:
+            return getattr(self.instance, prop)
+        except:
+            pass

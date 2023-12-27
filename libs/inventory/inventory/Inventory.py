@@ -155,13 +155,17 @@ class Registry:
         consumable: int = 1
     ):
         cursor = self.conn.cursor()
-        instance = Instantiator.instantiator(filename)
+        instance = Instance(name)
         cursor.execute(
             """
                 INSERT INTO items(name, filename, quantity, weight, consumable)
                 VALUES(?, ?, ?, ?, ?);
             """,
-            (name, filename, quantity, weight, consumable)
+            (name,
+             filename,
+             quantity,
+             weight,
+             True if instance.get_property("consumable") else False)
         )
         self.conn.commit()
 
@@ -243,7 +247,7 @@ class Registry:
     def display(self):
         table = Table(title=f"{os.getenv('LOGNAME')}'s inventory")
         # Remove all entries without corresponding files
-        self.cleanup_items()
+        #self.cleanup_items()
         table.add_column("Item name")
         table.add_column("Item count")
         table.add_column("Item file")
