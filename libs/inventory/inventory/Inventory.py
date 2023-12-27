@@ -100,7 +100,6 @@ class List:
         self.path = os.path.expanduser(
             f'{Config.values["INV_PATH"]}'
         )
-        #try:
         self.conn = sqlite3.connect(
             os.path.expanduser(PATH)
         )
@@ -113,7 +112,7 @@ class List:
     def __str__(self) -> str:
         return json.dumps(self.inventory)
 
-    # Create inventory SQL table
+    # Create inventory SQL table (DEPRECATE AS SOON AS IS PRACTICAL)
     def __create_sql_table(self):
         cursor = self.conn.cursor()
         cursor.execute(
@@ -137,21 +136,40 @@ class List:
             data = json.load(fh)
         cursor = self.conn.cursor()
         for item in data:
-            cursor.execute(
-                """
-                    INSERT INTO items(name, filename, quantity, weight, consumable)
-                    VALUES(?, ?, ?, ?, ?);
-                """
-            , (item,
-               data[item]["filename"],
-               data[item]["quantity"],
-               data[item]["volume"],
-               1 if 'consumable' in data[item] else 0)
+            self.__add_table_entry(
+                name = item,
+                filename = data[item]["filename"],
+                quantity = data[item]["quantity"],
+                weight = data[item]["volume"],
+                consumable = 1 if 'consumable' in data[item] else 0
             )
-            self.conn.commit()
+
+    def __add_table_entry(
+        self,
+        name: str = "",
+        filename: str = "",
+        quantity: float = 1.0,
+        weight: float = 0.0,
+        consumable: int = 1
+    ):
+        cursor = self.conn.cursor()
+        cursor.execute(
+            """
+                INSERT INTO items(name, filename, quantity, weight, consumable)
+                VALUES(?, ?, ?, ?, ?);
+            """,
+            (name,
+             filename,
+             quantity,
+             weight,
+             consumable)
+        )
+        self.conn.commit()
+
 
     # Delete table entries by name, one by one
-    def __delete_table_entry(self, entry: str = ""):
+    def __delete_table_entry(self, name: str = "", filename: str = ""):
+        self.remove(item = name)
         cursor = self.conn.cursor()
         cursor.execute(
             """
@@ -163,42 +181,48 @@ class List:
     # Add/remove items
 
     def total_volume(self) -> int:
-
         total_volume = 0
-        for item in self.inventory:
-            if os.path.exists(f"{self.path}/{item}.py"):
-                total_volume += int(self.inventory[item]["volume"]) * int(self.inventory[item]["quantity"])
+        cursor = self.conn.cursor()
+        cursor.execute(
+            """
+                SELECT volume FROM items;
+            """
+        )
+        for (volume,) in cursor.fetchall():
+            total_volume += volume
         return total_volume
 
     def add(self, item: str, number: int = 1) -> None:
-        if item in self.inventory:
-            self.inventory[item]["quantity"] += number
-            # self.inventory[item]["volume"] += volume
-        else:
-            self.inventory[item] = {
-                "quantity": number,
-                "filename": f"{item}.py",
-                "volume": f"{self.is_consumable(item).VOLUME}"
-            }
-        self.empties()
-        #self.write()
+        cursor = self.conn.cursor()
+        cursor.execute(
+            f"""
+                UPDATE items
+                SET quantity = quantity + {number}
+                WHERE name = ?;
+            """,
+            (item,)
+        )
+        if cursor.rowcount != 1:
+            self.__add_table_entry(
+                name = item,
+                filename = f"{item}.py",
+                quantity = number
+            )
 
     def remove(self, item: str, number: int = -1) -> None:
-        self.add(item, number)
+        self.add(item = item, number = number)
 
     # Automatically remove empty or negative quantity items
 
     def empties(self) -> None:
-        deletes = []
         cursor = self.conn.cursor()
         cursor.execute(
             """
                 SELECT name, filename FROM items WHERE quantity <= 0.0
             """
         )
-        for delete in cursor.fetchall():
-            print(delete)
-            #self.__delete_table_entry(delete)
+        for name, filename in cursor.fetchall():
+            self.__delete_table_entry(name, filename)
 
     # Completely removes all items in .inv not listed in the .registry file
 
