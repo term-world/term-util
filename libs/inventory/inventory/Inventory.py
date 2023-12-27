@@ -158,11 +158,7 @@ class List:
                 INSERT INTO items(name, filename, quantity, weight, consumable)
                 VALUES(?, ?, ?, ?, ?);
             """,
-            (name,
-             filename,
-             quantity,
-             weight,
-             consumable)
+            (name, filename, quantity, weight, consumable)
         )
         self.conn.commit()
 
