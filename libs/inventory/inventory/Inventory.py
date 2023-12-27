@@ -95,23 +95,6 @@ class Acquire:
 class List:
 
     # File operations
-    """
-    DEPRECATED: Transitioning to SQLite3 database to accommodate the
-                equippable invetory system for adventure.
-
-    def __init__(self):
-        self.inventory = {}
-        self.path = os.path.expanduser(f'{Config.values["INV_PATH"]}')
-        try:
-            fh = open(
-                os.path.expanduser(PATH),
-                "r+"
-              )
-            self.inventory = json.load(fh)
-            fh.close()
-        except: pass
-    """
-
     def __init__(self):
         self.inventory = {}
         self.path = os.path.expanduser(
@@ -124,12 +107,13 @@ class List:
         self.__create_sql_table()
         if os.path.exists(f"{self.path}/.registry"):
             self.__convert_json_file()
-            #os.unlink(f"{self.path}/.registry")
+            os.unlink(f"{self.path}/.registry")
 
     # Representation
     def __str__(self) -> str:
         return json.dumps(self.inventory)
 
+    # Create inventory SQL table
     def __create_sql_table(self):
         cursor = self.conn.cursor()
         cursor.execute(
@@ -138,11 +122,14 @@ class List:
                     name TEXT,
                     filename TEXT,
                     quantity REAL,
-                    volume REAL
+                    weight REAL,
+                    consumable INTEGER,
+                    volume REAL GENERATED ALWAYS AS (weight * quantity) STORED
                 );
             """
         )
 
+    # Convert legacy JSON file
     def __convert_json_file(self):
         with open(os.path.expanduser(
                 f'{Config.values["INV_PATH"]}/.registry'
@@ -152,23 +139,26 @@ class List:
         for item in data:
             cursor.execute(
                 """
-                    INSERT INTO items(name, filename, quantity, volume)
-                    VALUES(?, ?, ?, ?);
+                    INSERT INTO items(name, filename, quantity, weight, consumable)
+                    VALUES(?, ?, ?, ?, ?);
                 """
             , (item,
                data[item]["filename"],
                data[item]["quantity"],
-               data[item]["volume"])
+               data[item]["volume"],
+               1 if 'consumable' in data[item] else 0)
             )
             self.conn.commit()
 
-    def write(self) -> None:
-        self.empties()
-        with open(
-            os.path.expanduser(PATH),
-            "w"
-        ) as fh:
-            json.dump(self.inventory, fh)
+    # Delete table entries by name, one by one
+    def __delete_table_entry(self, entry: str = ""):
+        cursor = self.conn.cursor()
+        cursor.execute(
+            """
+                DELETE FROM items WHERE name = ?
+            """,
+            (entry,)
+        )
 
     # Add/remove items
 
@@ -191,7 +181,7 @@ class List:
                 "volume": f"{self.is_consumable(item).VOLUME}"
             }
         self.empties()
-        self.write()
+        #self.write()
 
     def remove(self, item: str, number: int = -1) -> None:
         self.add(item, number)
@@ -200,14 +190,15 @@ class List:
 
     def empties(self) -> None:
         deletes = []
-        for item in self.inventory:
-            if self.inventory[item]["quantity"] <= 0:
-                deletes.append(item)
-            # Delete files if no Python file exists in .inv
-            if not os.path.exists(f"{self.path}/{item}.py"):
-                deletes.append(item)
-        for item in deletes:
-            del self.inventory[item]
+        cursor = self.conn.cursor()
+        cursor.execute(
+            """
+                SELECT name, filename FROM items WHERE quantity <= 0.0
+            """
+        )
+        for delete in cursor.fetchall():
+            print(delete)
+            #self.__delete_table_entry(delete)
 
     # Completely removes all items in .inv not listed in the .registry file
 
@@ -227,24 +218,26 @@ class List:
 
     def display(self):
         table = Table(title=f"{os.getenv('LOGNAME')}'s inventory")
-        # Write latest inventory ahead of printing table
-        #self.write()
         # Remove all entries without corresponding files
-        self.cleanup_items()
+        # self.cleanup_items()
         table.add_column("Item name")
         table.add_column("Item count")
         table.add_column("Item file")
         table.add_column("Consumable")
         table.add_column("Volume")
 
-        for item in self.inventory:
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT name, filename, quantity, consumable, volume FROM items
+        """)
+
+        for name, filename, quantity, consumable, volume in cursor.fetchall():
             table.add_row(
-                item,
-                str(self.inventory[item]["quantity"]),
-                self.inventory[item]["filename"],
-                str(self.is_consumable(item).consumable),
-                # TODO: Is it necessary to use the consumable status to derive VOLUME?
-                str(self.is_consumable(item).VOLUME * self.inventory[item]["quantity"])
+                str(name),
+                str(quantity),
+                str(filename),
+                str(consumable),
+                str(volume)
             )
 
         console = Console()
