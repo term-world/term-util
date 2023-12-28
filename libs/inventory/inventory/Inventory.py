@@ -110,17 +110,13 @@ class Registry:
             self.__convert_json_file()
             os.unlink(f"{self.path}/.registry")
 
-    # Representation
-    def __str__(self) -> str:
-        return json.dumps(self.inventory)
-
     # Create inventory SQL table (DEPRECATE AS SOON AS IS PRACTICAL)
     def __create_sql_table(self):
         cursor = self.conn.cursor()
         cursor.execute(
             """
                 CREATE TABLE IF NOT EXISTS items (
-                    name TEXT,
+                    name TEXT UNIQUE,
                     filename TEXT,
                     quantity REAL,
                     weight REAL,
@@ -169,7 +165,6 @@ class Registry:
         )
         self.conn.commit()
 
-
     # Delete table entries by name, one by one
     def __delete_table_entry(self, name: str = "", filename: str = ""):
         self.remove(item = name)
@@ -178,8 +173,36 @@ class Registry:
             """
                 DELETE FROM items WHERE name = ?
             """,
-            (entry,)
+            (name,)
         )
+
+    # Automatically remove empty or negative quantity items
+    def __remove_zero_quantity_items(self) -> None:
+        cursor = self.conn.cursor()
+        cursor.execute(
+            """
+                SELECT name, filename FROM items WHERE quantity <= 0.0
+            """
+        )
+        for name, filename in cursor.fetchall():
+            self.__delete_table_entry(name, filename)
+
+    # Completely removes all items in .inv, but not in registry file
+    def __remove_expended_files(self) -> None:
+        cursor = self.conn.cursor()
+        path = os.path.expanduser(
+            Config.values["INV_PATH"]
+        )
+        files = [item for item in os.listdir(path) if item.endswith(".py")]
+        cursor.execute(
+            """
+                SELECT filename from items;
+            """
+        )
+        items = [file for (file,) in cursor.fetchall()]
+        cleanups = set(files) - set(items)
+        for file in cleanups:
+            os.unlink(f"{path}/{file}")
 
     # Add/remove items
 
@@ -205,6 +228,7 @@ class Registry:
             """,
             (item,)
         )
+        self.conn.commit()
         if cursor.rowcount != 1:
             self.__add_table_entry(
                 name = item,
@@ -214,46 +238,32 @@ class Registry:
 
     def remove(self, item: str, number: int = -1) -> None:
         self.add(item = item, number = number)
+        self.__remove_zero_quantity_items()
 
-    # Automatically remove empty or negative quantity items
-    def empties(self) -> None:
+    def search(self, item: str = "") -> dict:
+        # TODO: Expand to allow for multiple item search
         cursor = self.conn.cursor()
         cursor.execute(
             """
-                SELECT name, filename FROM items WHERE quantity <= 0.0
-            """
+                SELECT name, quantity FROM items WHERE name = ? LIMIT 1
+            """,
+            (item, )
         )
-        for name, filename in cursor.fetchall():
-            self.__delete_table_entry(name, filename)
-
-    # Completely removes all items in .inv, but not in registry file
-    def cleanup_items(self) -> None:
-        cursor = self.conn.cursor()
-        path = os.path.expanduser(
-            Config.values["INV_PATH"]
-        )
-        files = [item for item in os.listdir(path) if item.endswith(".py")]
-        cursor.execute(
-            """
-                SELECT filename from items;
-            """
-        )
-        items = [file for (file,) in cursor.fetchall()]
-        cleanups = set(files) - set(items)
-        for file in cleanups:
-            os.unlink(f"{path}/{file}")
+        result = cursor.fetchone()
+        return {
+            "name": result[0],
+            "quantity": result[1]
+        }
 
     # Create a nice(r) display
     def display(self):
         table = Table(title=f"{os.getenv('LOGNAME')}'s inventory")
-        # Remove all entries without corresponding files
-        #self.cleanup_items()
         table.add_column("Item name")
         table.add_column("Item count")
         table.add_column("Item file")
         table.add_column("Consumable")
         table.add_column("Volume")
-
+        # TODO: Move query to its own method
         cursor = self.conn.cursor()
         cursor.execute("""
             SELECT name, filename, quantity, consumable, volume FROM items
@@ -337,6 +347,7 @@ class Items:
 
         # Verify that item is in path or inventory
         try:
+            # TODO: Replace with Instantiator instance
             item_file = importlib.import_module(f"{item}")
         except ModuleNotFoundError:
             print(f"You don't seem to have any {item}.")
@@ -344,6 +355,7 @@ class Items:
 
         # Reflect the class
         try:
+            # TODO: Use Instantiator instance
             instance = getattr(item_file, item)()
         except:
             print(f"{item} doesn't seem to be a valid object.")
@@ -351,16 +363,15 @@ class Items:
 
         # Test type of item; remove if ItemSpec
         try:
+            record = registry.search(item)
             box = self.is_box(item_file)
             fixture = self.is_fixture(item_file)
-            number = self.registry[item]["quantity"]
 #             if fixture or box:
 #                 raise IsFixture(item)
-
             # Only decrease quantity if item is consumable
             if instance.consumable:
                 registry.remove(item)
-            if number <= 0:
+            if record["quantity"] <= 0:
                 raise OutOfError(item)
         except (KeyError, OutOfError) as e:
             print(f"You have no {item} remaining!")
