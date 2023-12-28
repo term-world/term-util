@@ -80,9 +80,10 @@ class Acquire:
             exit()
 
     def add(self):
+        # TODO: There's a better way to do this than remove from a string.
         item = self.filename.replace(".py", "")
-        # TODO: is_consumable renamed and total_volume calculated differently
-        item_volume = registry.is_consumable(item).VOLUME * self.quantity
+        instance = Instance(item)
+        item_volume = instance.get_property("VOLUME") * self.quantity
         current_volume = registry.total_volume() + item_volume
         if MAX_VOLUME >= current_volume:
             try:
@@ -110,7 +111,7 @@ class Registry:
             self.__convert_json_file()
             os.unlink(f"{self.path}/.registry")
 
-    # Create inventory SQL table (DEPRECATE AS SOON AS IS PRACTICAL)
+    # Create inventory SQL table
     def __create_sql_table(self):
         cursor = self.conn.cursor()
         cursor.execute(
@@ -126,7 +127,7 @@ class Registry:
             """
         )
 
-    # Convert legacy JSON file
+    # Convert legacy JSON file (DEPRECATE WHEN PRACTICAL)
     def __convert_json_file(self):
         with open(os.path.expanduser(
                 f'{Config.values["INV_PATH"]}/.registry'
@@ -187,7 +188,7 @@ class Registry:
         for name, filename in cursor.fetchall():
             self.__delete_table_entry(name, filename)
 
-    # Completely removes all items in .inv, but not in registry file
+    # Removes all items not in database, but currently in inventory folder
     def __remove_expended_files(self) -> None:
         cursor = self.conn.cursor()
         path = os.path.expanduser(
@@ -204,8 +205,7 @@ class Registry:
         for file in cleanups:
             os.unlink(f"{path}/{file}")
 
-    # Add/remove items
-
+    # Calculate total volume of inventory
     def total_volume(self) -> int:
         total_volume = 0
         cursor = self.conn.cursor()
@@ -250,10 +250,12 @@ class Registry:
             (item, )
         )
         result = cursor.fetchone()
-        return {
-            "name": result[0],
-            "quantity": result[1]
-        }
+        if result:
+            return {
+                "name": result[0],
+                "quantity": result[1]
+            }
+        return {}
 
     # Create a nice(r) display
     def display(self):
@@ -287,7 +289,6 @@ class Items:
 
     def __init__(self, registry):
         self.inv = registry
-        self.registry = registry.inventory
 
     def is_fixture(self, item) -> bool:
         return "FixtureSpec" in dir(item)
@@ -298,11 +299,12 @@ class Items:
     def file_exists(self, item) -> bool:
         return os.path.exists(f"{self.inv.path}/{item}.py")
 
-    def registry_exists(self, item) -> bool:
-        for element in self.registry:
-            if element == item:
-                return True
-        return False
+    # TODO: Determine if this is used? It appears to be dead.
+    #def registry_exists(self, item) -> bool:
+    #    for element in self.registry:
+    #        if element == item:
+    #            return True
+    #    return False
 
     def trash(self, item: str, quantity: int = 1) -> None:
         """ Removes item from the list; tied to the "remove" .bashrc alias """
@@ -318,15 +320,15 @@ class Items:
     def drop(self, item: str = "", quantity: int = 1) -> None:
         """ Drops item copy in current directory; removes from inventory """
         try:
-            if not item in self.registry:
+            result = registry.search(item = item)
+            if not result:
                 raise OutOfError(item)
             # Convert the quantity to an integer if not already one
             quantity = int(quantity)
             # Test if the number being dropped is more than we have
-            # and limit the drops to only the quantity that we actually
-            # can drop
-            if quantity > self.registry[item]["quantity"]:
-                quantity = self.registry[item]["quantity"]
+            # and limit the drops to only the quantity that we have
+            if quantity > result["quantity"]:
+                quantity = result["quantity"]
         except OutOfError:
             print(f"It doesn't look like you have any {item}.")
             exit()
@@ -366,8 +368,6 @@ class Items:
             record = registry.search(item)
             box = self.is_box(item_file)
             fixture = self.is_fixture(item_file)
-#             if fixture or box:
-#                 raise IsFixture(item)
             # Only decrease quantity if item is consumable
             if instance.consumable:
                 registry.remove(item)
