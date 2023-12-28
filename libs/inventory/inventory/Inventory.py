@@ -25,6 +25,7 @@ from .Validation import Validator
 from .Instantiator import Instance
 
 PATH = f'{Config.values["INV_PATH"]}/{Config.values["INV_REGISTRY"]}'
+WORLD = os.getenv("WORLD_NAME")
 
 sys.path.append(
   [
@@ -38,27 +39,31 @@ MAX_VOLUME = 10
 class Acquire:
 
     def __init__(self, filename, quantity: int = 1):
+        """ Constructor """
         self.filename = filename
         self.item = filename
         if quantity == "":
             quantity = 1
         self.quantity = int(quantity)
         if not Validator.validate(filename):
-            exit()
+            sys.exit()
         self.locate(filename)
         self.move()
         self.add()
 
     def is_box(self, item) -> bool:
+        """ Checks if item is a box type """
         self.box = "BoxSpec" in dir(item)
 
     def locate(self, filename: str = "") -> None:
+        """ Locates item file in current working directory """
         self.name, self.ext = self.filename.split("/")[-1].split(".")
         self.name = re.search(r"[a-zA-Z]+", self.name).group(0)
         self.box = Validator.is_box(self.name)
         self.filename = f"{self.name}.{self.ext}"
 
     def move(self):
+        """ Move the file acquired to the inventory directory """
         try:
             path = os.path.expanduser(
                 f'{Config.values["INV_PATH"]}/{self.filename}'
@@ -77,9 +82,10 @@ class Acquire:
                     os.remove(f"./{self.item}")
         except Exception as e:
             print(f"Couldn't acquire {self.name}")
-            exit()
+            sys.exit()
 
     def add(self):
+        """ Add the item acquired to the database """
         # TODO: There's a better way to do this than remove from a string.
         item = self.filename.replace(".py", "")
         instance = Instance(item)
@@ -90,15 +96,18 @@ class Acquire:
                 registry.add(self.name, self.quantity)
             except Exception as e:
                 print(f"Couldn't acquire {self.name}")
-                exit()
+                sys.exit()
         else:
             print(f"Couldn't acquire {self.quantity} {self.name}: Max Volume exceeded")
-            exit()
+            sys.exit()
+
+    # TODO: Add resistance for certain magical items or level needs?
 
 class Registry:
 
     # File operations
     def __init__(self):
+        """ Constructor """
         self.inventory = {}
         self.path = os.path.expanduser(
             f'{Config.values["INV_PATH"]}'
@@ -106,13 +115,14 @@ class Registry:
         self.conn = sqlite3.connect(
             os.path.expanduser(PATH)
         )
-        self.__create_sql_table()
+        self.__create_inv_sql_table()
         if os.path.exists(f"{self.path}/.registry"):
             self.__convert_json_file()
             os.unlink(f"{self.path}/.registry")
 
     # Create inventory SQL table
-    def __create_sql_table(self):
+    def __create_inv_sql_table(self):
+        """ Create tables for inventory and other needs based on WORLD_NAME """
         cursor = self.conn.cursor()
         cursor.execute(
             """
@@ -126,9 +136,18 @@ class Registry:
                 );
             """
         )
+        if WORLD == "venture":
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS equipment (
+
+                );
+                """
+            )
 
     # Convert legacy JSON file (DEPRECATE WHEN PRACTICAL)
     def __convert_json_file(self):
+        """ Convert JSON file from earlier versions of topia """
         with open(os.path.expanduser(
                 f'{Config.values["INV_PATH"]}/.registry'
             ), "r") as fh:
@@ -148,9 +167,9 @@ class Registry:
         name: str = "",
         filename: str = "",
         quantity: float = 1.0,
-        weight: float = 0.0,
-        consumable: int = 1
+        weight: float = 0.0
     ):
+        """ Add item to table """
         cursor = self.conn.cursor()
         instance = Instance(name)
         cursor.execute(
@@ -166,8 +185,8 @@ class Registry:
         )
         self.conn.commit()
 
-    # Delete table entries by name, one by one
     def __delete_table_entry(self, name: str = "", filename: str = ""):
+        """ Delete single entry from table """
         self.remove(item = name)
         cursor = self.conn.cursor()
         cursor.execute(
@@ -177,8 +196,8 @@ class Registry:
             (name,)
         )
 
-    # Automatically remove empty or negative quantity items
     def __remove_zero_quantity_items(self) -> None:
+        """ Remove items with negative or zero quantity """
         cursor = self.conn.cursor()
         cursor.execute(
             """
@@ -188,8 +207,8 @@ class Registry:
         for name, filename in cursor.fetchall():
             self.__delete_table_entry(name, filename)
 
-    # Removes all items not in database, but currently in inventory folder
     def __remove_expended_files(self) -> None:
+        """ Remove files from inventory if present, but not in database """
         cursor = self.conn.cursor()
         path = os.path.expanduser(
             Config.values["INV_PATH"]
@@ -205,8 +224,8 @@ class Registry:
         for file in cleanups:
             os.unlink(f"{path}/{file}")
 
-    # Calculate total volume of inventory
     def total_volume(self) -> int:
+        """ Calculate total volume of inventory """
         total_volume = 0
         cursor = self.conn.cursor()
         cursor.execute(
@@ -219,6 +238,8 @@ class Registry:
         return total_volume
 
     def add(self, item: str, number: int = 1) -> None:
+        """ API to add an item to the inventory DB """
+        # TODO: Doesn't add if there aren't any already?
         cursor = self.conn.cursor()
         cursor.execute(
             f"""
@@ -237,10 +258,12 @@ class Registry:
             )
 
     def remove(self, item: str, number: int = -1) -> None:
+        """ API to remove an item from inventory DB """
         self.add(item = item, number = number)
         self.__remove_zero_quantity_items()
 
     def search(self, item: str = "") -> dict:
+        """ API to search inventory database """
         # TODO: Expand to allow for multiple item search
         cursor = self.conn.cursor()
         cursor.execute(
@@ -259,6 +282,7 @@ class Registry:
 
     # Create a nice(r) display
     def display(self):
+        """ Display contents of inventory to the terminal """
         table = Table(title=f"{os.getenv('LOGNAME')}'s inventory")
         table.add_column("Item name")
         table.add_column("Item count")
@@ -288,15 +312,19 @@ class Registry:
 class Items:
 
     def __init__(self, registry):
+        """ Constructor """
         self.inv = registry
 
     def is_fixture(self, item) -> bool:
+        """ Returns fixture specification status """
         return "FixtureSpec" in dir(item)
 
     def is_box(self, item) -> bool:
+        """ Returns box specification status """
         return "BoxSpec" in dir(item)
 
     def file_exists(self, item) -> bool:
+        """ Checks if item file exists in inventory """
         return os.path.exists(f"{self.inv.path}/{item}.py")
 
     # TODO: Determine if this is used? It appears to be dead.
@@ -331,7 +359,7 @@ class Items:
                 quantity = result["quantity"]
         except OutOfError:
             print(f"It doesn't look like you have any {item}.")
-            exit()
+            sys.exit()
         except ValueError:
             quantity = 1
         try:
@@ -342,7 +370,7 @@ class Items:
             pass
 
     def use(self, item: str):
-
+        """ Uses an item from the inventory """
         # Set up properties and potential kwargs
         box = False
         fixture = False
@@ -353,7 +381,7 @@ class Items:
             item_file = importlib.import_module(f"{item}")
         except ModuleNotFoundError:
             print(f"You don't seem to have any {item}.")
-            exit()
+            sys.exit()
 
         # Reflect the class
         try:
@@ -361,7 +389,7 @@ class Items:
             instance = getattr(item_file, item)()
         except:
             print(f"{item} doesn't seem to be a valid object.")
-            exit()
+            sys.exit()
 
         # Test type of item; remove if ItemSpec
         try:
@@ -375,7 +403,7 @@ class Items:
                 raise OutOfError(item)
         except (KeyError, OutOfError) as e:
             print(f"You have no {item} remaining!")
-            exit()
+            sys.exit()
         except IsFixture: pass
 
         # Return the result or inbuilt use method
