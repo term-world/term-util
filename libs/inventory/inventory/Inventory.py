@@ -327,13 +327,6 @@ class Items:
         """ Checks if item file exists in inventory """
         return os.path.exists(f"{self.inv.path}/{item}.py")
 
-    # TODO: Determine if this is used? It appears to be dead.
-    #def registry_exists(self, item) -> bool:
-    #    for element in self.registry:
-    #        if element == item:
-    #            return True
-    #    return False
-
     def trash(self, item: str, quantity: int = 1) -> None:
         """ Removes item from the list; tied to the "remove" .bashrc alias """
         try:
