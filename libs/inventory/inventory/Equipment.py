@@ -9,28 +9,6 @@ from .Inventory import *
 
 class Equipment:
 
-    EQUIPMENT_FILE = os.path.expanduser(
-        f"{Config.values['INV_PATH']}/equipped.json"
-    )
-
-    EQUIPMENT_LOCS = {
-        "head": None,
-        "neck": None,
-        "hand": {
-            "left": None,
-            "right": None
-        },
-        "torso": None,
-        "leg": {
-            "left": None,
-            "right": None
-        },
-        "foot": {
-            "left": None,
-            "right": None
-        }
-    }
-
     def __init__(self):
         self.equipped = {}
         try:
@@ -47,7 +25,7 @@ class Equipment:
         except KeyError:
             raise InvalidSlotError
             exit()
-        
+
     def __determine_sidedness(self) -> str:
         q = narrator.Question({
             "question": "Right or Left",
@@ -66,7 +44,7 @@ class Equipment:
                 }
             except (TypeError, AttributeError):
                 yield {slot: [self.equipped[slot]]}
-    
+
     def __update_equipped(self) -> None:
         with open(self.EQUIPMENT_FILE, "w") as fh:
             json.dump(self.equipped, fh)
@@ -104,6 +82,7 @@ class Equipment:
         self.__update_equipped()
 
 class EquipError(Exception):
+
     def __init__(self, item:str, *args):
         super().__init__(args)
         print("Can't equip {item}.")
