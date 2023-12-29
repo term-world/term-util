@@ -6,22 +6,26 @@ from .Path import Path
 class Narrator:
 
   def __init__(self, path_file: str = ".paths.yml"):
-    fh = open(path_file)
-    self.paths = yaml.safe_load(fh)
+    try:
+        fh = open(path_file)
+        self.paths = yaml.safe_load(fh)
+    except:
+        # Dummy content to populate paths
+        self.paths =  {0:{0:['Lorem ipsum.']}}
     self.path = Path(
         paths = {
-          "act": list(self.paths.keys())[0],
-          "scene": list(self.paths.values())[0]
+            "act": list(self.paths.keys())[0],
+            "scene": list(self.paths.values())[0]
         }
     )
 
   def narrate(self, **kwargs):
     lines = []
     acts = list(self.paths)
-    
+
     # Try to choose a given path, if key exists
     try:
-        chosen_path = self.paths[self.path.act] 
+        chosen_path = self.paths[self.path.act]
     except KeyError:
         chosen_path = self.paths[acts[0]]
 
