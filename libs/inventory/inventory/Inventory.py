@@ -5,6 +5,7 @@ import json
 import argparse
 import importlib
 import shutil
+import sqlite3
 
 from rich.table import Table
 from rich.console import Console
@@ -22,8 +23,10 @@ from .Item import Factory
 
 from .Validation import Validator
 from .Equipment import EquipError
+from .Instantiator import Instance
 
 PATH = f'{Config.values["INV_PATH"]}/{Config.values["INV_REGISTRY"]}'
+WORLD = os.getenv("WORLD_NAME")
 
 sys.path.append(
   [
@@ -37,30 +40,34 @@ MAX_VOLUME = 10
 class Acquire:
 
     def __init__(self, filename, quantity: int = 1):
+        """ Constructor """
         self.filename = filename
         self.item = filename
         if quantity == "":
             quantity = 1
         self.quantity = int(quantity)
         if not Validator.validate(filename):
-            exit()
+            sys.exit()
         self.locate(filename)
         self.move()
         self.add()
 
     def is_box(self, item) -> bool:
+        """ Checks if item is a box type """
         self.box = "BoxSpec" in dir(item)
     
     def is_relic(self, item) -> bool:
         self.relic = "RelicSpec" in dir(item)
 
     def locate(self, filename: str = "") -> None:
+        """ Locates item file in current working directory """
         self.name, self.ext = self.filename.split("/")[-1].split(".")
         self.name = re.search(r"[a-zA-Z]+", self.name).group(0)
         self.box = Validator.is_box(self.name)
         self.filename = f"{self.name}.{self.ext}"
 
     def move(self):
+        """ Move the file acquired to the inventory directory """
         try:
             path = os.path.expanduser(
                 f'{Config.values["INV_PATH"]}/{self.filename}'
@@ -83,108 +90,208 @@ class Acquire:
             #       _why_ something couldn't Acquire; see add
             #       method below as well.
             print(f"Couldn't acquire {self.name}")
-            exit()
+            sys.exit()
 
     def add(self):
+        """ Add the item acquired to the database """
+        # TODO: There's a better way to do this than remove from a string.
         item = self.filename.replace(".py", "")
-        item_volume = list.is_consumable(item).VOLUME * self.quantity
-        current_volume = list.total_volume() + item_volume
+        instance = Instance(item)
+        item_volume = instance.get_property("VOLUME") * self.quantity
+        current_volume = registry.total_volume() + item_volume
         if MAX_VOLUME >= current_volume:
             try:
-                list.add(self.name, self.quantity)
+                registry.add(self.name, self.quantity)
             except Exception as e:
                 print(f"Couldn't acquire {self.name}")
-                exit()
+                sys.exit()
         else:
             print(f"Couldn't acquire {self.quantity} {self.name}: Max Volume exceeded")
-            exit()
+            sys.exit()
 
-class List:
+    # TODO: Add resistance for certain magical items or level needs?
+
+class Registry:
 
     # File operations
-
     def __init__(self):
+        """ Constructor """
         self.inventory = {}
-        self.path = os.path.expanduser(f'{Config.values["INV_PATH"]}')
-        try:
-            fh = open(
-                os.path.expanduser(PATH),
-                "r+"
+        self.path = os.path.expanduser(
+            f'{Config.values["INV_PATH"]}'
+        )
+        self.conn = sqlite3.connect(
+            os.path.expanduser(PATH)
+        )
+        self.__create_inv_sql_table()
+        if os.path.exists(f"{self.path}/.registry"):
+            self.__convert_json_file()
+            os.unlink(f"{self.path}/.registry")
+
+    # Create inventory SQL table
+    def __create_inv_sql_table(self):
+        """ Create tables for inventory and other needs based on WORLD_NAME """
+        cursor = self.conn.cursor()
+        cursor.execute(
+            """
+                CREATE TABLE IF NOT EXISTS items (
+                    name TEXT UNIQUE,
+                    filename TEXT,
+                    quantity REAL,
+                    weight REAL,
+                    consumable INTEGER,
+                    volume REAL GENERATED ALWAYS AS (weight * quantity) STORED
+                );
+            """
+        )
+        if WORLD == "venture":
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS equipment (
+
+                );
+                """
             )
-            self.inventory = json.load(fh)
-            fh.close()
-        except: pass
 
-    # Representation
+    # Convert legacy JSON file (DEPRECATE WHEN PRACTICAL)
+    def __convert_json_file(self):
+        """ Convert JSON file from earlier versions of topia """
+        with open(os.path.expanduser(
+                f'{Config.values["INV_PATH"]}/.registry'
+            ), "r") as fh:
+            data = json.load(fh)
+        cursor = self.conn.cursor()
+        for item in data:
+            self.__add_table_entry(
+                name = item,
+                filename = data[item]["filename"],
+                quantity = data[item]["quantity"],
+                weight = data[item]["volume"],
+                consumable = 1 if 'consumable' in data[item] else 0
+            )
 
-    def __str__(self) -> str:
-        return json.dumps(self.inventory)
+    def __add_table_entry(
+        self,
+        name: str = "",
+        filename: str = "",
+        quantity: float = 1.0,
+        weight: float = 0.0
+    ):
+        """ Add item to table """
+        cursor = self.conn.cursor()
+        instance = Instance(name)
+        cursor.execute(
+            """
+                INSERT INTO items(name, filename, quantity, weight, consumable)
+                VALUES(?, ?, ?, ?, ?);
+            """,
+            (name,
+             filename,
+             quantity,
+             weight,
+             True if instance.get_property("consumable") else False)
+        )
+        self.conn.commit()
 
-    def write(self) -> None:
-        self.empties()
-        with open(
-            os.path.expanduser(PATH),
-            "w"
-        ) as fh:
-            json.dump(self.inventory, fh)
+    def __delete_table_entry(self, name: str = "", filename: str = ""):
+        """ Delete single entry from table """
+        self.remove(item = name)
+        cursor = self.conn.cursor()
+        cursor.execute(
+            """
+                DELETE FROM items WHERE name = ?
+            """,
+            (name,)
+        )
 
-    # Add/remove items
+    def __remove_zero_quantity_items(self) -> None:
+        """ Remove items with negative or zero quantity """
+        cursor = self.conn.cursor()
+        cursor.execute(
+            """
+                SELECT name, filename FROM items WHERE quantity <= 0.0
+            """
+        )
+        for name, filename in cursor.fetchall():
+            self.__delete_table_entry(name, filename)
+
+    def __remove_expended_files(self) -> None:
+        """ Remove files from inventory if present, but not in database """
+        cursor = self.conn.cursor()
+        path = os.path.expanduser(
+            Config.values["INV_PATH"]
+        )
+        files = [item for item in os.listdir(path) if item.endswith(".py")]
+        cursor.execute(
+            """
+                SELECT filename from items;
+            """
+        )
+        items = [file for (file,) in cursor.fetchall()]
+        cleanups = set(files) - set(items)
+        for file in cleanups:
+            os.unlink(f"{path}/{file}")
 
     def total_volume(self) -> int:
+        """ Calculate total volume of inventory """
         total_volume = 0
-        for item in self.inventory:
-            if os.path.exists(f"{self.path}/{item}.py"):
-                total_volume += int(self.inventory[item]["volume"]) * int(self.inventory[item]["quantity"])
+        cursor = self.conn.cursor()
+        cursor.execute(
+            """
+                SELECT volume FROM items;
+            """
+        )
+        for (volume,) in cursor.fetchall():
+            total_volume += volume
         return total_volume
 
     def add(self, item: str, number: int = 1) -> None:
-        if item in self.inventory and not self.is_consumable(item).unique:
-            self.inventory[item]["quantity"] += number
-        else:
-            self.inventory[item] = {
-                "quantity": number,
-                "filename": f"{item}.py",
-                "volume": f"{self.is_consumable(item).VOLUME}"
-            }
-        self.empties()
-        self.write()
+        """ API to add an item to the inventory DB """
+        # TODO: Doesn't add if there aren't any already?
+        cursor = self.conn.cursor()
+        cursor.execute(
+            f"""
+                UPDATE items
+                SET quantity = quantity + {number}
+                WHERE name = ?;
+            """,
+            (item,)
+        )
+        self.conn.commit()
+        if cursor.rowcount != 1:
+            self.__add_table_entry(
+                name = item,
+                filename = f"{item}.py",
+                quantity = number
+            )
 
     def remove(self, item: str, number: int = -1) -> None:
-        self.add(item, number)
+        """ API to remove an item from inventory DB """
+        self.add(item = item, number = number)
+        self.__remove_zero_quantity_items()
 
-    # Automatically remove empty or negative quantity items
+    def search(self, item: str = "") -> dict:
+        """ API to search inventory database """
+        # TODO: Expand to allow for multiple item search
+        cursor = self.conn.cursor()
+        cursor.execute(
+            """
+                SELECT name, quantity FROM items WHERE name = ? LIMIT 1
+            """,
+            (item, )
+        )
+        result = cursor.fetchone()
+        if result:
+            return {
+                "name": result[0],
+                "quantity": result[1]
+            }
+        return {}
 
-    def empties(self) -> None:
-        deletes = []
-        for item in self.inventory:
-            if self.inventory[item]["quantity"] <= 0:
-                deletes.append(item)
-            # Delete files if no Python file exists in .inv
-            if not os.path.exists(f"{self.path}/{item}.py"):
-                deletes.append(item)
-        for item in deletes:
-            del self.inventory[item]
-
-    def cleanup_items(self) -> None:
-        """ Removes items not in the inventory file """
-        tempdict = {}
-        path = os.path.expanduser("~/.inv/")
-        for item in os.listdir(path):
-            if ".py" in item:
-                tempdict.update({item: "null"})
-            for element in self.inventory:
-                if f"{element}.py" in item:
-                    tempdict.pop(item)
-        for item in tempdict:
-            os.remove(os.path.expanduser(f"~/.inv/{item}"))
-
+    # Create a nice(r) display
     def display(self):
-        """ Creates a nice display on command """
+        """ Display contents of inventory to the terminal """
         table = Table(title=f"{os.getenv('LOGNAME')}'s inventory")
-        # Write latest inventory ahead of printing table
-        self.write()
-        # Remove all entries without corresponding files
-        self.cleanup_items()
         table.add_column("Item name")
         table.add_column("Item count")
         table.add_column("Consumable")
@@ -192,73 +299,42 @@ class List:
         table.add_column("Equippable")
         table.add_column("Durability")
         table.add_column("Equipped")
+        # TODO: Move query to its own method
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT name, filename, quantity, consumable, volume FROM items
+        """)
 
-        for item in self.inventory:
+        for name, filename, quantity, consumable, volume in cursor.fetchall():
             table.add_row(
-                item,
-                str(self.inventory[item]["quantity"]),
-                str(self.is_consumable(item).consumable),
-                str(self.is_consumable(item).VOLUME * self.inventory[item]["quantity"]),
-                str(self.is_consumable(item).equippable),
-                self.qualify_durability(self.is_consumable(item))
+                str(name),
+                str(quantity),
+                str(filename),
+                str(True if consumable else False),
+                str(volume)
             )
 
         console = Console()
         console.print(table)
         print(f"Your current total volume limit is: {self.total_volume()}/{MAX_VOLUME}\n")
 
-    # Returns a boolean whether the item object is a consumable
-
-    def is_consumable(self, item: str) -> list:
-        # TODO: rename this method; the name is inconsistent
-        #       with its apparent function?
-        try:
-            item_file = importlib.import_module(f"{item}")
-        except ModuleNotFoundError:
-            exit()
-        try:
-            instance = getattr(item_file, item)()
-        except:
-            print(f"{item} doesn't seem to be a valid object.")
-            exit()
-        return instance
-
-    @staticmethod
-    def qualify_durability(item: object) -> str:
-        ratings = {
-            "Excellent": 8,
-            "Good": 5,
-            "Fair": 3,
-            "Poor": 1
-        }
-        for rank in ratings:
-            if item.durability >= ratings[rank]:
-                return rank
-        return "Broken"
-
 class Items:
 
-    def __init__(self, list):
-        self.inv = list
-        self.list = list.inventory
+    def __init__(self, registry):
+        """ Constructor """
+        self.inv = registry
 
     def is_fixture(self, item) -> bool:
+        """ Returns fixture specification status """
         return "FixtureSpec" in dir(item)
 
     def is_box(self, item) -> bool:
+        """ Returns box specification status """
         return "BoxSpec" in dir(item)
 
     def file_exists(self, item) -> bool:
+        """ Checks if item file exists in inventory """
         return os.path.exists(f"{self.inv.path}/{item}.py")
-
-    def registry_exists(self, item) -> bool:
-        for element in self.list:
-            if element == item:
-                return True
-        return False
-
-    def __is_equippable(self, item) -> bool:
-        pass
 
     def trash(self, item: str, quantity: int = 1) -> None:
         """ Removes item from the list; tied to the "remove" .bashrc alias """
@@ -267,31 +343,31 @@ class Items:
         except ValueError:
             quantity = 1
         try:
-            list.add(item, 0 - int(quantity))
+            registry.add(item, 0 - int(quantity))
         except:
             pass
 
     def drop(self, item: str = "", quantity: int = 1) -> None:
         """ Drops item copy in current directory; removes from inventory """
         try:
-            if not item in self.list:
+            result = registry.search(item = item)
+            if not result:
                 raise OutOfError(item)
             # Convert the quantity to an integer if not already one
             quantity = int(quantity)
             # Test if the number being dropped is more than we have
-            # and limit the drops to only the quantity that we actually
-            # can drop
-            if quantity > self.list[item]["quantity"]:
-                quantity = self.list[item]["quantity"]
+            # and limit the drops to only the quantity that we have
+            if quantity > result["quantity"]:
+                quantity = result["quantity"]
         except OutOfError:
             print(f"It doesn't look like you have any {item}.")
-            exit()
+            sys.exit()
         except ValueError:
             quantity = 1
         try:
             for _ in range(quantity):
                 Factory(item)
-            list.add(item, 0 - int(quantity))
+            registry.add(item, 0 - int(quantity))
         except:
             pass
     
@@ -306,40 +382,41 @@ class Items:
             exit()
 
     def use(self, item: str):
-
+        """ Uses an item from the inventory """
         # Set up properties and potential kwargs
         box = False
         fixture = False
 
         # Verify that item is in path or inventory
         try:
+            # TODO: Replace with Instantiator instance
             item_file = importlib.import_module(f"{item}")
         except ModuleNotFoundError:
             print(f"You don't seem to have any {item}.")
-            exit()
+            sys.exit()
 
         # Reflect the class
         try:
+            # TODO: Use Instantiator instance
             instance = getattr(item_file, item)()
         except:
             print(f"{item} doesn't seem to be a valid object.")
-            exit()
+            sys.exit()
 
         # Test type of item; remove if ItemSpec
         try:
+            record = registry.search(item)
             box = self.is_box(item_file)
             relic = self.is_relic(item_file)
             fixture = self.is_fixture(item_file)
-            number = self.list[item]["quantity"]
-
             # Only decrease quantity if item is consumable
             if instance.consumable:
-                list.remove(item)
-            if number <= 0:
+                registry.remove(item)
+            if record["quantity"] <= 0:
                 raise OutOfError(item)
         except (KeyError, OutOfError) as e:
             print(f"You have no {item} remaining!")
-            exit()
+            sys.exit()
         except IsFixture: pass
 
         # Return the result or inbuilt use method
@@ -348,11 +425,9 @@ class Items:
         else:
             return instance.use(**instance.actions)
 
-# Create instances to use as shorthand
-# I thought this was a bad idea, but this
-# is actually how the random module works
-
+# Create instances to use as shorthand. I thought this was a bad idea,
+# but this is actually how the random module works:
 # https://github.com/python/cpython/blob/main/Lib/random.py
 
-list = List()
-items = Items(list)
+registry = Registry()
+items = Items(registry)

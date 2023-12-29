@@ -32,7 +32,7 @@ class Result:
         self.list()
 
     def list(self) -> None:
-        print(f"Found {len([self.data])} results.", end = "\n")
+        print(f"Found {len(self.data)} results.", end = "\n")
         for entry in self.data:
             entry = Library(**entry)
             print(f"  * {entry.name}", end = "\n")
