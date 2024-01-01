@@ -27,3 +27,7 @@ class Instance:
             return getattr(self.instance, prop)
         except:
             pass
+
+    def is_child_of(self, item_type) -> bool:
+        res_order = self.instance.__mro__
+        print(item_type in res_order)

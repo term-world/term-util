@@ -1,96 +1,92 @@
 import os
-import json
+import sys
 import narrator
+import sqlite3
 
-from importlib import import_module
+from enum import Enum
 
-from .Config import Config
-from .Inventory import *
+from .Item import RelicSpec
+from .Instantiator import Instance
 
 class Equipment:
 
-    def __init__(self):
-        self.equipped = {}
-        try:
-            with open(self.EQUIPMENT_FILE, "r") as fh:
-                self.equipped = json.load(fh)
-        except FileNotFoundError:
-            self.equipped = self.EQUIPMENT_LOCS
-            with open(self.EQUIPMENT_FILE, "w") as fh:
-                json.dump(self.equipped, fh)
-
-    def __verify_slot(self, slot: str = "") -> bool:
-        try:
-            return self.equipped[slot] is not None
-        except KeyError:
+    @staticmethod
+    def verify_slot(filename: str = "", slot: str = "") -> bool:
+        instance = Instance(filename)
+        if not instance.is_child_of(RelicSpec):
+            raise EquipError
+        if not instance.get_property("slot") == slot:
             raise InvalidSlotError
-            exit()
+        return True
 
-    def __determine_sidedness(self) -> str:
-        q = narrator.Question({
-            "question": "Right or Left",
-            "responses": [
-                {"choice": "right", "outcome": "right"},
-                {"choice": "left", "outcome": "left"}
-            ]
-        })
-        return q.ask()
+    @staticmethod
+    def configure(conn: sqlite3.Connection) -> None:
+        cursor = conn.cursor()
+        # Create equipment table
+        cursor.execute(
+            """
+                CREATE TABLE IF NOT EXISTS equipment (
+                    slot TEXT UNIQUE,
+                    filename TEXT
+                );
+            """
+        )
 
-    def __review_slots(self) -> dict:
-        for slot in self.equipped:
-            try:
-                yield {
-                    slot: list(self.equipped[slot].values())
-                }
-            except (TypeError, AttributeError):
-                yield {slot: [self.equipped[slot]]}
+        # Create standard slots as rows without values
+        # TODO: Implement ENUM
 
-    def __update_equipped(self) -> None:
-        with open(self.EQUIPMENT_FILE, "w") as fh:
-            json.dump(self.equipped, fh)
+        # Set trigger to validate slot assignment on update
+        # TODO: Consider moving verify_slot to Validator
+        conn.create_function("verify_slot", 2, Equipment.verify_slot)
+        cursor.execute(
+            """
+                CREATE TRIGGER IF NOT EXISTS inv_equipment_validate_slot
+                BEFORE UPDATE ON equipment
+                WHEN verify_slot(NEW.filename, NEW.slot)
+                BEGIN
+                    INSERT INTO equipment(slot, filename)
+                    VALUES (NEW.slot, NEW.filename);
+                END;
+            """
+        )
 
-    def equip(self, item: str = "") -> None:
-        name = item.split(".")[0]
-        item_file = import_module(name)
-        obj = getattr(item_file, item)()
-        if "RelicSpec" not in dir(obj):
-            raise EquipError(item)
-        if self.__verify_slot(slot = obj.slot):
-            try:
-                if obj.slot in ["hand", "leg", "foot"]:
-                    side = self.__determine_sidedness()
-                    self.equipped[obj.slot][side] = name 
-                else:
-                    self.equipped[obj.slot] = name 
-            except KeyError:
-                raise InvalidSlotError
-            self.__update_equipped()
+        # Set trigger to prevent additional slot creation
+        # TODO: Reenable when finished with table creation
+        #cursor.execute(
+        #    """
+        #        CREATE TRIGGER inv_equipment_limit_slots
+        #        BEFORE INSERT ON equipment
+        #        BEGIN
+        #            SELECT raise(ABORT, "Sike!");
+        #        END;
+        #    """
+        #)
 
-    def unequip(self, item: str = "") -> None:
-        for slot in self.__review_slots():
-            loc = next(iter(slot.keys()))
-            if item in slot[loc]:
-                if type(self.equipped[loc]) == dict:
-                    sub_slot = list(
-                        self.equipped[loc].keys()
-                    )[list(
-                        self.equipped[loc].values()
-                    ).index(item)]
-                    self.equipped[loc][sub_slot] = None
-                else:
-                    self.equipped[loc] = None
-        self.__update_equipped()
+    @staticmethod
+    def equip(cursor: sqlite3.Cursor, filename: str = "", slot: str = "") -> bool:
+        try:
+            cursor.execute(
+                """
+                    INSERT INTO equipment(slot, filename)
+                    VALUES(?, ?)
+                """,
+                (slot, filename)
+            )
+        except sqlite3.IntegrityError:
+            print("Invalid slot for item!")
+            sys.exit()
+        return bool(cursor.rowcount)
 
 class EquipError(Exception):
 
     def __init__(self, item:str, *args):
         super().__init__(args)
         print("Can't equip {item}.")
-        exit()
+        sys.exit()
 
 class InvalidSlotError(Exception):
 
     def __init__(self, *args):
         super().__init__(args)
         print("Not an equippable slot.")
-        exit()
+        sys.exit()

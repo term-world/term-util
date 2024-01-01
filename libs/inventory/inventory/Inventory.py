@@ -13,6 +13,7 @@ from collections import namedtuple
 
 # TODO: Add configuration to environment variable stack?
 from .Config import *
+from .Equipment import *
 
 from .Item import ItemSpec
 from .Item import FixtureSpec
@@ -22,7 +23,6 @@ from .Item import IsFixture
 from .Item import Factory
 
 from .Validation import Validator
-from .Equipment import EquipError
 from .Instantiator import Instance
 
 PATH = f'{Config.values["INV_PATH"]}/{Config.values["INV_REGISTRY"]}'
@@ -55,7 +55,7 @@ class Acquire:
     def is_box(self, item) -> bool:
         """ Checks if item is a box type """
         self.box = "BoxSpec" in dir(item)
-    
+
     def is_relic(self, item) -> bool:
         self.relic = "RelicSpec" in dir(item)
 
@@ -145,13 +145,7 @@ class Registry:
             """
         )
         if WORLD == "venture":
-            cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS equipment (
-
-                );
-                """
-            )
+            Equipment.configure(conn = self.conn)
 
     # Convert legacy JSON file (DEPRECATE WHEN PRACTICAL)
     def __convert_json_file(self):
@@ -166,8 +160,7 @@ class Registry:
                 name = item,
                 filename = data[item]["filename"],
                 quantity = data[item]["quantity"],
-                weight = data[item]["volume"],
-                consumable = 1 if 'consumable' in data[item] else 0
+                weight = data[item]["volume"]
             )
 
     def __add_table_entry(
@@ -296,9 +289,10 @@ class Registry:
         table.add_column("Item count")
         table.add_column("Consumable")
         table.add_column("Volume")
-        table.add_column("Equippable")
-        table.add_column("Durability")
-        table.add_column("Equipped")
+        if WORLD == "venture":
+            table.add_column("Equippable")
+            table.add_column("Durability")
+            table.add_column("Equipped")
         # TODO: Move query to its own method
         cursor = self.conn.cursor()
         cursor.execute("""
@@ -309,7 +303,7 @@ class Registry:
             table.add_row(
                 str(name),
                 str(quantity),
-                str(filename),
+                #str(filename),
                 str(True if consumable else False),
                 str(volume)
             )
@@ -331,6 +325,9 @@ class Items:
     def is_box(self, item) -> bool:
         """ Returns box specification status """
         return "BoxSpec" in dir(item)
+
+    def is_relic(self, item) -> bool:
+        return "RelicSpec" in dir(item)
 
     def file_exists(self, item) -> bool:
         """ Checks if item file exists in inventory """
@@ -370,7 +367,7 @@ class Items:
             registry.add(item, 0 - int(quantity))
         except:
             pass
-    
+
     def equip(self, item: str):
         try:
             if not item in self.list:
