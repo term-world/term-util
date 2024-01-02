@@ -300,12 +300,16 @@ class Registry:
         """)
 
         for name, filename, quantity, consumable, volume in cursor.fetchall():
+            instance = Instance(name)
             table.add_row(
                 str(name),
                 str(quantity),
-                #str(filename),
                 str(True if consumable else False),
-                str(volume)
+                str(volume),
+                str(True if instance.get_property("slot") else False),
+                # TODO: Relics are "dill-able"; update accordingly
+                "-",
+                "-"
             )
 
         console = Console()
