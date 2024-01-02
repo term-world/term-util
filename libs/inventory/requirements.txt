@@ -1,3 +1,4 @@
 gitit
 python-dotenv
 rich
+dill

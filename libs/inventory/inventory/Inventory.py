@@ -1,20 +1,20 @@
 import os
 import re
 import sys
+import dill
 import json
-import argparse
 import importlib
 import shutil
 import sqlite3
 
 from rich.table import Table
 from rich.console import Console
-from collections import namedtuple
 
 # TODO: Add configuration to environment variable stack?
 from .Config import *
 from .Equipment import *
 
+# TODO: Why not just import *?
 from .Item import ItemSpec
 from .Item import FixtureSpec
 from .Item import BoxSpec
@@ -72,7 +72,8 @@ class Acquire:
             path = os.path.expanduser(
                 f'{Config.values["INV_PATH"]}/{self.filename}'
             )
-            if not self.box or not self.relic:
+            if not self.box:
+                instance = Instance(self.name)
                 try:
                     shutil.copy(self.filename, path)
                 except:
@@ -80,8 +81,8 @@ class Acquire:
                     # based on real file name; however, if this
                     # fails it might be OK
                     pass
-                obj = importlib.import_module(self.name)
-                if "ItemSpec" in dir(obj) or "RelicSpec" in dir(obj):
+                #obj = importlib.import_module(self.name)
+                if "ItemSpec" in dir(instance) or "RelicSpec" in dir(instance):
                     # Remove only the physically present copy
                     os.remove(f"./{self.item}")
         except Exception as e:
@@ -188,7 +189,6 @@ class Registry:
 
     def __delete_table_entry(self, name: str = "", filename: str = ""):
         """ Delete single entry from table """
-        self.remove(item = name)
         cursor = self.conn.cursor()
         cursor.execute(
             """
@@ -196,6 +196,7 @@ class Registry:
             """,
             (name,)
         )
+        self.conn.commit()
 
     def __remove_zero_quantity_items(self) -> None:
         """ Remove items with negative or zero quantity """
@@ -417,6 +418,7 @@ class Items:
                 raise OutOfError(item)
         except (KeyError, OutOfError) as e:
             print(f"You have no {item} remaining!")
+            registry.remove(item = item)
             sys.exit()
         except IsFixture: pass
 
