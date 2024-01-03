@@ -14,6 +14,7 @@ class Validator:
             obj = importlib.import_module(name)
             getattr(obj, name)().use
         except Exception as e:
+            print(e)
             print("Not a valid item file.")
             return False
         return True

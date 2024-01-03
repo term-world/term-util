@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import enum
 import gitit
 import string
 import inspect
@@ -68,9 +69,36 @@ class BoxSpec(ItemSpec):
 
 class RelicSpec(ItemSpec):
 
-    def __init__(self, filename = ""):
+    class Slots(enum.Enum):
+        HEAD = "head"
+        CHEST = "chest"
+        ARM = "arm"
+        HAND = "hand"
+        BELT = "belt"
+        LEG = "leg"
+        FOOT = "foot"
+
+    class Sides(enum.Enum):
+        RIGHT = "right"
+        LEFT = "left"
+
+    def __init__(self, filename: str = ""):
         super().__init__(filename)
         self.equippable = True
+        self.consumable = False
+        self.VOLUME = 1.0
+        self.slot = {
+            "location": self.Slots.HAND,
+            "side": self.Sides.RIGHT
+        }
+
+    #def __validate_slot_value(self, slot: str = ""):
+    #    slots = Slots._value2member_map_
+    #    return slot in slots
+
+    #def __validate_side_value(self, side: str = ""):
+    #    sides = Sides._value2member_map_
+    #    return side in sides
 
 class Factory:
 

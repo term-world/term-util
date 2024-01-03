@@ -1,22 +1,42 @@
 import os
 import sys
+import enum
 import narrator
 import sqlite3
-
-from enum import Enum
 
 from .Item import RelicSpec
 from .Instantiator import Instance
 
 class Equipment:
 
+    # TODO: There are a lot of duplicated methods testing
+    #       types, et al. We need to remove/conslidate them.
+
+    def choose_equip_side(sides: list = []) -> str:
+        if type(sides) == str or len(sides) == 1:
+            return [sides][-1]
+        q = narrator.Question({
+            "question": "Equip to which side?\n",
+            "responses": [
+                {"choice": side.value, "outcome": side.value} for side in sides
+            ]
+        })
+        return q.ask()
+
+    # TODO: Seems to belong in Validator, tho.
     @staticmethod
-    def verify_slot(filename: str = "", slot: str = "") -> bool:
-        instance = Instance(filename)
+    def verify_valid_slot(name: str, slot: dict) -> bool:
         if not instance.is_child_of(RelicSpec):
             raise EquipError
-        if not instance.get_property("slot") == slot:
-            raise InvalidSlotError
+        # TODO: More complicated test of "slot-" and "sidedness"
+        #if not instance.get_property("slot") == slot:
+        #    raise InvalidSlotError
+        try:
+            slots = instance.get_property("slot")
+            print(slot)
+        except e:
+            pass
+        print("Valid")
         return True
 
     @staticmethod
@@ -27,25 +47,23 @@ class Equipment:
             """
                 CREATE TABLE IF NOT EXISTS equipment (
                     slot TEXT UNIQUE,
-                    filename TEXT
+                    side TEXT,
+                    name TEXT
                 );
             """
         )
 
-        # Create standard slots as rows without values
-        # TODO: Implement ENUM
-
         # Set trigger to validate slot assignment on update
         # TODO: Consider moving verify_slot to Validator
-        conn.create_function("verify_slot", 2, Equipment.verify_slot)
+        conn.create_function("verify_valid_slot", 2, Equipment.verify_valid_slot)
         cursor.execute(
             """
                 CREATE TRIGGER IF NOT EXISTS inv_equipment_validate_slot
                 BEFORE UPDATE ON equipment
-                WHEN verify_slot(NEW.filename, NEW.slot)
+                WHEN verify_valid_slot(NEW.slot, NEW.side, NEW.name)
                 BEGIN
-                    INSERT INTO equipment(slot, filename)
-                    VALUES (NEW.slot, NEW.filename);
+                    INSERT INTO equipment(slot, side, name)
+                    VALUES (NEW.slot, NEW.side, NEW.name);
                 END;
             """
         )
@@ -63,15 +81,22 @@ class Equipment:
         #)
 
     @staticmethod
-    def equip(cursor: sqlite3.Cursor, filename: str = "", slot: str = "") -> bool:
+    def equip(conn: sqlite3.Connection, name: str = "") -> bool:
+        instance = Instance(name)
+        slot = instance.get_property("slot")["location"].value
+        side = Equipment.choose_equip_side(
+            sides = instance.get_property("slot")["side"]
+        )
+        cursor = conn.cursor()
         try:
             cursor.execute(
                 """
-                    INSERT INTO equipment(slot, filename)
-                    VALUES(?, ?)
+                    INSERT INTO equipment(slot, side, name)
+                    VALUES(?, ?, ?)
                 """,
-                (slot, filename)
+                (slot, side, name)
             )
+            conn.commit()
         except sqlite3.IntegrityError:
             print("Invalid slot for item!")
             sys.exit()

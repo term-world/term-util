@@ -263,10 +263,12 @@ class Registry:
         """ API to remove an item from inventory DB """
         self.add(item = item, number = number)
         self.__remove_zero_quantity_items()
+        self.__remove_expended_files()
 
     def search(self, item: str = "") -> dict:
         """ API to search inventory database """
         # TODO: Expand to allow for multiple item search
+        #       using OR logic
         cursor = self.conn.cursor()
         cursor.execute(
             """
@@ -375,10 +377,10 @@ class Items:
 
     def equip(self, item: str):
         try:
-            if not item in self.list:
+            result = registry.search(item = item)
+            if not result:
                 raise OutOfError
-            if not self.__is_equippable(item):
-                raise Equipment.EquipError
+            Equipment.equip(registry.conn, item)
         except OutOfError:
             print(f"It doesn't look like you have any {item}.")
             exit()
