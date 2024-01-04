@@ -87,6 +87,7 @@ class RelicSpec(ItemSpec):
         self.equippable = True
         self.consumable = False
         self.VOLUME = 1.0
+        self.durabilty = 10
         self.slot = {
             "location": self.Slots.HAND,
             "side": self.Sides.RIGHT

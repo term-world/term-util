@@ -296,24 +296,24 @@ class Registry:
             table.add_column("Equippable")
             table.add_column("Durability")
             table.add_column("Equipped")
-        # TODO: Move query to its own method
+
+        # TODO: Move query to its own method?
         cursor = self.conn.cursor()
         cursor.execute("""
             SELECT name, filename, quantity, consumable, volume FROM items
         """)
 
         for name, filename, quantity, consumable, volume in cursor.fetchall():
+            # Feature-flag the rows; columns already are
             instance = Instance(name)
-            table.add_row(
-                str(name),
-                str(quantity),
-                str(True if consumable else False),
-                str(volume),
-                str(True if instance.get_property("slot") else False),
-                # TODO: Relics are "dill-able"; update accordingly
-                "-",
-                "-"
-            )
+            data = [str(name), str(quantity), str(consumable), str(volume)]
+            if WORLD == "venture":
+                data += [
+                    str(True if instance.get_property("slot") else False),
+                    "-",
+                    "-"
+                ]
+            table.add_row(*data)
 
         console = Console()
         console.print(table)
