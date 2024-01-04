@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import enum
 import gitit
 import string
 import inspect
@@ -9,7 +10,6 @@ from glob import glob
 from importlib import util
 
 from .Config import *
-#from .Template import Template
 
 sys.path.append(
     os.path.expanduser(f'{Config.values["INV_PATH"]}')
@@ -26,6 +26,8 @@ class ItemSpec:
                 arg = arg.replace("-","")
                 self.actions[arg] = val
         self.consumable = True
+        self.equippable = False
+        self.unique = False
         self.VOLUME = 1
         self.vars()
 
@@ -48,13 +50,12 @@ class FixtureSpec(ItemSpec):
 
 class BoxSpec(ItemSpec):
 
-    consumable = True
-    VOLUME = 2
-
     def __init__(self, filename: str = ""):
         super().__init__(filename)
+        self.VOLUME = 2
 
     def use(self, **kwargs) -> None:
+        """ Define use method to be boxy """
         if kwargs["action"] == "pack":
             return
         if kwargs["action"] == "unpack":
@@ -65,14 +66,46 @@ class BoxSpec(ItemSpec):
                 self.file
             )
 
+class RelicSpec(ItemSpec):
+
+    class Slots(enum.Enum):
+        HEAD = "HEAD"
+        CHEST = "CHEST"
+        HANDS = "HANDS"
+        BELT = "BELT"
+        LEGS = "LEGS"
+        FEET = "FEET"
+
+    class Sides(enum.Enum):
+        RIGHT = "right"
+        LEFT = "left"
+
+    def __init__(self, filename: str = ""):
+        super().__init__(filename)
+        self.equippable = True
+        self.consumable = False
+        self.VOLUME = 1.0
+        self.durability = 10
+        self.slot = {
+            "location": self.Slots.HANDS,
+        }
+
+    #def __validate_slot_value(self, slot: str = ""):
+    #    slots = Slots._value2member_map_
+    #    return slot in slots
+
+    #def __validate_side_value(self, side: str = ""):
+    #    sides = Sides._value2member_map_
+    #    return side in sides
+
 class Factory:
 
-    def __init__(self, name, path: str = "", fixture: bool = False, template: str = "", **kwargs):
+    def __init__(self, name, path: str = "", item_type: any = ItemSpec, template: str = "", **kwargs):
         """ Creates items from templates """
         self.path = path
         self.name = self.clean(name)
         self.template = self.load_template(template)
-        self.item_type = FixtureSpec if fixture else ItemSpec
+        self.item_type = item_type
 
         # Load source locally, and handle based on template contents
         source = inspect.getsource(self.template)

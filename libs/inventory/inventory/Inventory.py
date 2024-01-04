@@ -1,19 +1,20 @@
 import os
 import re
 import sys
+import dill
 import json
-import argparse
 import importlib
 import shutil
 import sqlite3
 
 from rich.table import Table
 from rich.console import Console
-from collections import namedtuple
 
 # TODO: Add configuration to environment variable stack?
 from .Config import *
+from .Equipment import *
 
+# TODO: Why not just import *?
 from .Item import ItemSpec
 from .Item import FixtureSpec
 from .Item import BoxSpec
@@ -55,6 +56,9 @@ class Acquire:
         """ Checks if item is a box type """
         self.box = "BoxSpec" in dir(item)
 
+    def is_relic(self, item) -> bool:
+        self.relic = "RelicSpec" in dir(item)
+
     def locate(self, filename: str = "") -> None:
         """ Locates item file in current working directory """
         self.name, self.ext = self.filename.split("/")[-1].split(".")
@@ -69,6 +73,7 @@ class Acquire:
                 f'{Config.values["INV_PATH"]}/{self.filename}'
             )
             if not self.box:
+                instance = Instance(self.name)
                 try:
                     shutil.copy(self.filename, path)
                 except:
@@ -76,11 +81,15 @@ class Acquire:
                     # based on real file name; however, if this
                     # fails it might be OK
                     pass
-                obj = importlib.import_module(self.name)
-                if "ItemSpec" in dir(obj):
+                #obj = importlib.import_module(self.name)
+                if "ItemSpec" in dir(instance) or "RelicSpec" in dir(instance):
                     # Remove only the physically present copy
                     os.remove(f"./{self.item}")
         except Exception as e:
+            # TODO: Differentiate levels of inacquisition. For
+            #       example, change the message here to reflect
+            #       _why_ something couldn't Acquire; see add
+            #       method below as well.
             print(f"Couldn't acquire {self.name}")
             sys.exit()
 
@@ -137,13 +146,7 @@ class Registry:
             """
         )
         if WORLD == "venture":
-            cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS equipment (
-
-                );
-                """
-            )
+            Equipment.configure(conn = self.conn)
 
     # Convert legacy JSON file (DEPRECATE WHEN PRACTICAL)
     def __convert_json_file(self):
@@ -158,8 +161,7 @@ class Registry:
                 name = item,
                 filename = data[item]["filename"],
                 quantity = data[item]["quantity"],
-                weight = data[item]["volume"],
-                consumable = 1 if 'consumable' in data[item] else 0
+                weight = data[item]["volume"]
             )
 
     def __add_table_entry(
@@ -187,7 +189,6 @@ class Registry:
 
     def __delete_table_entry(self, name: str = "", filename: str = ""):
         """ Delete single entry from table """
-        self.remove(item = name)
         cursor = self.conn.cursor()
         cursor.execute(
             """
@@ -195,6 +196,7 @@ class Registry:
             """,
             (name,)
         )
+        self.conn.commit()
 
     def __remove_zero_quantity_items(self) -> None:
         """ Remove items with negative or zero quantity """
@@ -256,15 +258,17 @@ class Registry:
                 filename = f"{item}.py",
                 quantity = number
             )
+        self.__remove_zero_quantity_items()
+        self.__remove_expended_files()
 
     def remove(self, item: str, number: int = -1) -> None:
         """ API to remove an item from inventory DB """
         self.add(item = item, number = number)
-        self.__remove_zero_quantity_items()
 
     def search(self, item: str = "") -> dict:
         """ API to search inventory database """
         # TODO: Expand to allow for multiple item search
+        #       using OR logic
         cursor = self.conn.cursor()
         cursor.execute(
             """
@@ -286,26 +290,31 @@ class Registry:
         table = Table(title=f"{os.getenv('LOGNAME')}'s inventory")
         table.add_column("Item name")
         table.add_column("Item count")
-        table.add_column("Item file")
         table.add_column("Consumable")
         table.add_column("Volume")
-        # TODO: Move query to its own method
+        if WORLD == "venture":
+            table.add_column("Equippable")
+            table.add_column("Durability")
+            table.add_column("Equipped")
+
+        # TODO: Move query to its own method?
         cursor = self.conn.cursor()
         cursor.execute("""
             SELECT name, filename, quantity, consumable, volume FROM items
         """)
 
         for name, filename, quantity, consumable, volume in cursor.fetchall():
-            table.add_row(
-                str(name),
-                str(quantity),
-                str(filename),
-                str(True if consumable else False),
-                str(volume)
-            )
+            # Feature-flag the rows; columns already are
+            data = [str(name), str(quantity), str(bool(consumable)), str(volume)]
+            if WORLD == "venture":
+                instance = Instance(name)
+                data += [
+                    str(True if instance.get_property("slot") else False),
+                    str(instance.get_property("durability") or "-"),
+                    str(Equipment.discover(cursor, name) or "-")                ]
+            table.add_row(*data)
 
         console = Console()
-        print("")
         console.print(table)
         print(f"Your current total volume limit is: {self.total_volume()}/{MAX_VOLUME}\n")
 
@@ -322,6 +331,9 @@ class Items:
     def is_box(self, item) -> bool:
         """ Returns box specification status """
         return "BoxSpec" in dir(item)
+
+    def is_relic(self, item) -> bool:
+        return "RelicSpec" in dir(item)
 
     def file_exists(self, item) -> bool:
         """ Checks if item file exists in inventory """
@@ -362,6 +374,16 @@ class Items:
         except:
             pass
 
+    def equip(self, item: str):
+        try:
+            result = registry.search(item = item)
+            if not result:
+                raise OutOfError
+            Equipment.equip(registry.conn, item)
+        except OutOfError:
+            print(f"It doesn't look like you have any {item}.")
+            exit()
+
     def use(self, item: str):
         """ Uses an item from the inventory """
         # Set up properties and potential kwargs
@@ -388,6 +410,7 @@ class Items:
         try:
             record = registry.search(item)
             box = self.is_box(item_file)
+            relic = self.is_relic(item_file)
             fixture = self.is_fixture(item_file)
             # Only decrease quantity if item is consumable
             if instance.consumable:
@@ -396,6 +419,7 @@ class Items:
                 raise OutOfError(item)
         except (KeyError, OutOfError) as e:
             print(f"You have no {item} remaining!")
+            registry.remove(item = item)
             sys.exit()
         except IsFixture: pass
 
