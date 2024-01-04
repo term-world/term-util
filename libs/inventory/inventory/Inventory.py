@@ -258,12 +258,12 @@ class Registry:
                 filename = f"{item}.py",
                 quantity = number
             )
+        self.__remove_zero_quantity_items()
+        self.__remove_expended_files()
 
     def remove(self, item: str, number: int = -1) -> None:
         """ API to remove an item from inventory DB """
         self.add(item = item, number = number)
-        self.__remove_zero_quantity_items()
-        self.__remove_expended_files()
 
     def search(self, item: str = "") -> dict:
         """ API to search inventory database """

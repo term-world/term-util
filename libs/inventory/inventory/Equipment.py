@@ -25,24 +25,26 @@ class Equipment:
 
     # TODO: Seems to belong in Validator, tho.
     @staticmethod
-    def verify_valid_slot(name: str, slot: dict) -> bool:
+    def verify_valid_slot(cursor: sqlite3.Cursor, name: str, slot: str) -> bool:
         if not instance.is_child_of(RelicSpec):
             raise EquipError
-        # TODO: More complicated test of "slot-" and "sidedness"
-        #if not instance.get_property("slot") == slot:
-        #    raise InvalidSlotError
-        try:
-            slots = instance.get_property("slot")
-            print(slot)
-        except e:
-            pass
-        print("Valid")
+        cursor.execute(
+            f"""
+                SELECT * FROM equipment
+                WHERE slot = {slot}
+            """
+        )
+        print(cursor.rowcount)
         return True
 
     @staticmethod
     def configure(conn: sqlite3.Connection) -> None:
         cursor = conn.cursor()
         # Create equipment table
+
+        # TODO: Fix uniqueness integrity error -- e.g. "hand"
+        #       has only one possible entry!
+
         cursor.execute(
             """
                 CREATE TABLE IF NOT EXISTS equipment (
@@ -97,7 +99,8 @@ class Equipment:
                 (slot, side, name)
             )
             conn.commit()
-        except sqlite3.IntegrityError:
+        except sqlite3.IntegrityError as err:
+            print(err)
             print("Invalid slot for item!")
             sys.exit()
         return bool(cursor.rowcount)
