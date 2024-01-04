@@ -79,15 +79,15 @@ class Equipment:
 
         # Set trigger to prevent additional slot creation
         # TODO: Reenable when finished with table creation
-        #cursor.execute(
-        #    """
-        #        CREATE TRIGGER inv_equipment_limit_slots
-        #        BEFORE INSERT ON equipment
-        #        BEGIN
-        #            SELECT raise(ABORT, "Sike!");
-        #        END;
-        #    """
-        #)
+        cursor.execute(
+            """
+                CREATE TRIGGER IF NOT EXISTS inv_equipment_limit_slots
+                BEFORE INSERT ON equipment
+                BEGIN
+                    SELECT raise(ABORT, "Sike!");
+                END;
+            """
+        )
 
     @staticmethod
     def discover(cursor: sqlite3.Cursor, name: str = "") -> str:
