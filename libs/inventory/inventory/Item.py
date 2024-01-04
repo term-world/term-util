@@ -28,7 +28,6 @@ class ItemSpec:
         self.consumable = True
         self.equippable = False
         self.unique = False
-        self.durability = 10
         self.VOLUME = 1
         self.vars()
 
@@ -70,13 +69,12 @@ class BoxSpec(ItemSpec):
 class RelicSpec(ItemSpec):
 
     class Slots(enum.Enum):
-        HEAD = "head"
-        CHEST = "chest"
-        ARM = "arm"
-        HAND = "hand"
-        BELT = "belt"
-        LEG = "leg"
-        FOOT = "foot"
+        HEAD = "HEAD"
+        CHEST = "CHEST"
+        HANDS = "HANDS"
+        BELT = "BELT"
+        LEGS = "LEGS"
+        FEET = "FEET"
 
     class Sides(enum.Enum):
         RIGHT = "right"
@@ -87,10 +85,9 @@ class RelicSpec(ItemSpec):
         self.equippable = True
         self.consumable = False
         self.VOLUME = 1.0
-        self.durabilty = 10
+        self.durability = 10
         self.slot = {
-            "location": self.Slots.HAND,
-            "side": self.Sides.RIGHT
+            "location": self.Slots.HANDS,
         }
 
     #def __validate_slot_value(self, slot: str = ""):

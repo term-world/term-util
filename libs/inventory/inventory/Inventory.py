@@ -305,14 +305,13 @@ class Registry:
 
         for name, filename, quantity, consumable, volume in cursor.fetchall():
             # Feature-flag the rows; columns already are
-            instance = Instance(name)
-            data = [str(name), str(quantity), str(consumable), str(volume)]
+            data = [str(name), str(quantity), str(bool(consumable)), str(volume)]
             if WORLD == "venture":
+                instance = Instance(name)
                 data += [
                     str(True if instance.get_property("slot") else False),
-                    "-",
-                    "-"
-                ]
+                    str(instance.get_property("durability") or "-"),
+                    str(Equipment.discover(cursor, name) or "-")                ]
             table.add_row(*data)
 
         console = Console()
