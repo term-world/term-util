@@ -1,6 +1,7 @@
 import os
 import sys
 import enum
+import inspect
 import narrator
 import sqlite3
 
@@ -27,6 +28,9 @@ class Equipment:
     # TODO: Seems to belong in Validator, tho.
     @staticmethod
     def verify_valid_slot(name: str = "", slot: str = "") -> bool:
+        # Jump the queue if unequipping!
+        if inspect.stack()[1].function == "unequip":
+            return True
         instance = Instance(name)
         return instance.get_property("slot")["location"] in RelicSpec.Slots
 
@@ -62,6 +66,8 @@ class Equipment:
             conn.commit()
         # Set trigger to validate slot assignment on update
         conn.create_function("verify_valid_slot", 2, Equipment.verify_valid_slot)
+
+        # TODO: Feature-flag sqlite3 callback trace as DEBUG
         sqlite3.enable_callback_tracebacks(True)
 
         cursor.execute(
@@ -78,7 +84,6 @@ class Equipment:
         )
 
         # Set trigger to prevent additional slot creation
-        # TODO: Reenable when finished with table creation
         cursor.execute(
             """
                 CREATE TRIGGER IF NOT EXISTS inv_equipment_limit_slots
@@ -121,6 +126,21 @@ class Equipment:
             print("Invalid slot for item!")
             sys.exit()
         return bool(cursor.rowcount)
+
+    @staticmethod
+    def unequip(conn: sqlite3.Connection, name: str = "") -> bool:
+        instance = Instance(name)
+        slot = instance.get_property("slot")["location"].value
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+                UPDATE equipment
+                SET name = ""
+                WHERE name = ? AND slot = ?
+            """,
+            (name, slot, )
+        )
+        conn.commit()
 
 class EquipError(Exception):
 

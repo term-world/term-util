@@ -378,12 +378,21 @@ class Items:
         try:
             result = registry.search(item = item)
             if not result:
-                raise OutOfError
+                raise OutOfError(item)
             Equipment.equip(registry.conn, item)
         except OutOfError:
             print(f"It doesn't look like you have any {item}.")
-            exit()
+            sys.exit()
 
+    def unequip(self, item: str):
+        try:
+            result = registry.search(item = item)
+            if not result:
+                raise OutOfError(item)
+            Equipment.unequip(registry.conn, item)
+        except OutOfError:
+            print(f"It doesn't look like you have any {item}.")
+            sys.exit()
     def use(self, item: str):
         """ Uses an item from the inventory """
         # Set up properties and potential kwargs
