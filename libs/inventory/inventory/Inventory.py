@@ -375,6 +375,7 @@ class Items:
         except:
             pass
 
+    @pennant.FEATURE_FLAG_FUNCTION(WORLD == "venture")
     def equip(self, item: str):
         try:
             result = registry.search(item = item)
@@ -385,6 +386,7 @@ class Items:
             print(f"It doesn't look like you have any {item}.")
             sys.exit()
 
+    @pennant.FEATURE_FLAG_FUNCTION(WORLD == "venture")
     def unequip(self, item: str):
         try:
             result = registry.search(item = item)
@@ -394,6 +396,12 @@ class Items:
         except OutOfError:
             print(f"It doesn't look like you have any {item}.")
             sys.exit()
+
+    @pennant.FEATURE_FLAG_FUNCTION(WORLD == "venture")
+    def equipped(self):
+        for slot, value in Equipment.show(registry.conn.cursor()):
+            print(slot, value)
+
     def use(self, item: str):
         """ Uses an item from the inventory """
         # Set up properties and potential kwargs
