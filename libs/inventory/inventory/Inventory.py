@@ -82,7 +82,6 @@ class Acquire:
                     # based on real file name; however, if this
                     # fails it might be OK
                     pass
-                #obj = importlib.import_module(self.name)
                 if "ItemSpec" in dir(instance) or "RelicSpec" in dir(instance):
                     # Remove only the physically present copy
                     os.remove(f"./{self.item}")
@@ -242,7 +241,6 @@ class Registry:
 
     def add(self, item: str, number: int = 1) -> None:
         """ API to add an item to the inventory DB """
-        # TODO: Doesn't add if there aren't any already?
         cursor = self.conn.cursor()
         cursor.execute(
             f"""
@@ -307,7 +305,7 @@ class Registry:
         for name, filename, quantity, consumable, volume in cursor.fetchall():
             # Feature-flag the rows; columns already are
             data = [str(name), str(quantity), str(bool(consumable)), str(volume)]
-            if WORLD == "venture":
+            with pennant.FEATURE_FLAG_CODE(WORLD == "venture"):
                 instance = Instance(name)
                 data += [
                     str(True if instance.get_property("slot") else False),
@@ -399,8 +397,13 @@ class Items:
 
     @pennant.FEATURE_FLAG_FUNCTION(WORLD == "venture")
     def equipped(self):
+        table = Table(title=f"{os.getenv('LOGNAME')}'s equipment")
+        table.add_column("Slot")
+        table.add_column("Item")
         for slot, value in Equipment.show(registry.conn.cursor()):
-            print(slot, value)
+            table.add_row(slot, value)
+        console = Console()
+        console.print(table)
 
     def use(self, item: str):
         """ Uses an item from the inventory """
