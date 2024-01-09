@@ -13,6 +13,9 @@ class Equipment:
     # TODO: There are a lot of duplicated methods testing
     #       types, et al. We need to remove/conslidate them.
 
+    # TODO: Decorate static methods with a decorator that acts
+    #       like a feature flag; is this another tool?
+
     def choose_equip_side(sides: list = []) -> str:
         """ Deprecated, or at least out of current use (RETAIN) """
         if type(sides) == str or len(sides) == 1:

@@ -6,6 +6,7 @@ import json
 import importlib
 import shutil
 import sqlite3
+import pennant
 
 from rich.table import Table
 from rich.console import Console
@@ -145,7 +146,7 @@ class Registry:
                 );
             """
         )
-        if WORLD == "venture":
+        with pennant.FEATURE_FLAG_CODE(WORLD == "venture"):
             Equipment.configure(conn = self.conn)
 
     # Convert legacy JSON file (DEPRECATE WHEN PRACTICAL)
@@ -292,7 +293,7 @@ class Registry:
         table.add_column("Item count")
         table.add_column("Consumable")
         table.add_column("Volume")
-        if WORLD == "venture":
+        with pennant.FEATURE_FLAG_CODE(WORLD == "venture"):
             table.add_column("Equippable")
             table.add_column("Durability")
             table.add_column("Equipped")
