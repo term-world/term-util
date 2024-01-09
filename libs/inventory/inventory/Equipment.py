@@ -2,6 +2,7 @@ import os
 import sys
 import enum
 import inspect
+import pennant
 import narrator
 import sqlite3
 
@@ -144,9 +145,12 @@ class Equipment:
 
     @staticmethod
     def show(cursor: sqlite3.Cursor):
-        for slot in RelicSpec.Slots:
-            equipped = Equipment.discover(cursor, slot.value)
-            yield slot.value, equipped
+        cursor.execute(
+            """
+                SELECT slot, name FROM equipment;
+            """
+        )
+        return cursor.fetchall()
 
 class EquipError(Exception):
 

@@ -15,13 +15,7 @@ from rich.console import Console
 from .Config import *
 from .Equipment import *
 
-# TODO: Why not just import *?
-from .Item import ItemSpec
-from .Item import FixtureSpec
-from .Item import BoxSpec
-from .Item import OutOfError
-from .Item import IsFixture
-from .Item import Factory
+from .Item import *
 
 from .Validation import Validator
 from .Instantiator import Instance
@@ -87,9 +81,7 @@ class Acquire:
                     os.remove(f"./{self.item}")
         except Exception as e:
             # TODO: Differentiate levels of inacquisition. For
-            #       example, change the message here to reflect
-            #       _why_ something couldn't Acquire; see add
-            #       method below as well.
+            #       example, use different exceptions defensively.
             print(f"Couldn't acquire {self.name}")
             sys.exit()
 
@@ -114,7 +106,6 @@ class Acquire:
 
 class Registry:
 
-    # File operations
     def __init__(self):
         """ Constructor """
         self.inventory = {}
@@ -129,7 +120,6 @@ class Registry:
             self.__convert_json_file()
             os.unlink(f"{self.path}/.registry")
 
-    # Create inventory SQL table
     def __create_inv_sql_table(self):
         """ Create tables for inventory and other needs based on WORLD_NAME """
         cursor = self.conn.cursor()
@@ -148,7 +138,6 @@ class Registry:
         with pennant.FEATURE_FLAG_CODE(WORLD == "venture"):
             Equipment.configure(conn = self.conn)
 
-    # Convert legacy JSON file (DEPRECATE WHEN PRACTICAL)
     def __convert_json_file(self):
         """ Convert JSON file from earlier versions of topia """
         with open(os.path.expanduser(
@@ -283,7 +272,6 @@ class Registry:
             }
         return {}
 
-    # Create a nice(r) display
     def display(self):
         """ Display contents of inventory to the terminal """
         table = Table(title=f"{os.getenv('LOGNAME')}'s inventory")
@@ -303,7 +291,6 @@ class Registry:
         """)
 
         for name, filename, quantity, consumable, volume in cursor.fetchall():
-            # Feature-flag the rows; columns already are
             data = [str(name), str(quantity), str(bool(consumable)), str(volume)]
             with pennant.FEATURE_FLAG_CODE(WORLD == "venture"):
                 instance = Instance(name)
