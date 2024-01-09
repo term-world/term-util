@@ -256,7 +256,7 @@ class Registry:
     def search(self, item: str = "") -> dict:
         """ API to search inventory database """
         # TODO: Expand to allow for multiple item search
-        #       using OR logic
+        #       using OR logic...er...nah.
         cursor = self.conn.cursor()
         cursor.execute(
             """
@@ -284,7 +284,6 @@ class Registry:
             table.add_column("Durability")
             table.add_column("Equipped")
 
-        # TODO: Move query to its own method?
         cursor = self.conn.cursor()
         cursor.execute("""
             SELECT name, filename, quantity, consumable, volume FROM items

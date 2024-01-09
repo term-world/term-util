@@ -75,6 +75,8 @@ class RelicSpec(ItemSpec):
         BELT = "BELT"
         LEGS = "LEGS"
         FEET = "FEET"
+        WEAPON_LEFT = "LEFT WEAPON"
+        WEAPON_RIGHT = "RIGHT WEAPON"
 
     class Sides(enum.Enum):
         RIGHT = "right"
@@ -97,6 +99,9 @@ class RelicSpec(ItemSpec):
     #def __validate_side_value(self, side: str = ""):
     #    sides = Sides._value2member_map_
     #    return side in sides
+
+class WeaponSpec(RelicSpec):
+    pass
 
 class Factory:
 
