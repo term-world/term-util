@@ -125,7 +125,6 @@ class Equipment:
         slot = Equipment.choose_equip_side(
             instance.get_property("slot")["location"]
         )
-        print(slot)
         cursor = conn.cursor()
         try:
             cursor.execute(
@@ -161,6 +160,7 @@ class Equipment:
             )
             if cursor.rowcount == 1:
                 conn.commit()
+                break
 
     @staticmethod
     def show(cursor: sqlite3.Cursor):
