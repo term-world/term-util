@@ -56,11 +56,14 @@ class Acquire:
 
     def locate(self, filename: str = "") -> None:
         """ Locates item file in current working directory """
+        # TODO: Revise method to look in directory and prompt if there
+        #       are multiple similarly-named items.
         self.name, self.ext = self.filename.split("/")[-1].split(".")
         self.name = re.search(r"[a-zA-Z]+", self.name).group(0)
         self.box = Validator.is_box(self.name)
-        self.filename = f"{self.name}.{self.ext}"
+        self.filename = f"{self.name}" # Removed {self.ext}; do we need it?
 
+    # TODO: This is how we dill it </MontelJordan>
     def move(self):
         """ Move the file acquired to the inventory directory """
         try:
@@ -70,8 +73,11 @@ class Acquire:
             if not self.box:
                 instance = Instance(self.name)
                 try:
-                    shutil.copy(self.filename, path)
-                except:
+                    with open(f"{path}","wb") as fh:
+                        # TODO: Class not found
+                        dill.dump(instance.object, fh)
+                    #shutil.copy(self.filename, path)
+                except Exception as e:
                     # This operation attempts to move the file
                     # based on real file name; however, if this
                     # fails it might be OK
@@ -243,7 +249,7 @@ class Registry:
         if cursor.rowcount != 1:
             self.__add_table_entry(
                 name = item,
-                filename = f"{item}.py",
+                filename = f"{item}",
                 quantity = number
             )
         self.__remove_zero_quantity_items()
@@ -292,7 +298,9 @@ class Registry:
         for name, filename, quantity, consumable, volume in cursor.fetchall():
             data = [str(name), str(quantity), str(bool(consumable)), str(volume)]
             with pennant.FEATURE_FLAG_CODE(WORLD == "venture"):
-                instance = Instance(name)
+                with open("{name}", "rb") as fh:
+                    instance = dill.load(fh)
+                #instance = Instance(name)
                 data += [
                     str(True if instance.get_property("slot") else False),
                     str(instance.get_property("durability") or "-"),
@@ -400,7 +408,9 @@ class Items:
         # Verify that item is in path or inventory
         try:
             # TODO: Replace with Instantiator instance
-            item_file = importlib.import_module(f"{item}")
+            with open(f"{Config.values['INV_PATH']}/{item}") as fh:
+                item_file = dill.load(fh)
+            #item_file = importlib.import_module(f"{item}")
         except ModuleNotFoundError:
             print(f"You don't seem to have any {item}.")
             sys.exit()

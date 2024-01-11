@@ -18,22 +18,47 @@ sys.path.append(
 class ItemSpec:
 
     def __init__(self, filename: str = ""):
+        """ Constructor """
         self.file = filename
         self.actions = {}
+        # TODO: Refactor to use arglite; this is the
+        #       snippet it came from, after all
         arg_pairs = self.pairs(sys.argv)
         for arg, val in arg_pairs:
             if re.match(r"^-{1,2}", arg):
                 arg = arg.replace("-","")
                 self.actions[arg] = val
+        # Constant properties
         self.consumable = True
         self.equippable = False
         self.unique = False
         self.VOLUME = 1
         self.vars()
 
+    # Portable dill'ing brought to you by the kind folks at:
+    # https://oegedijk.github.io/blog/pickle/dill/python/2020/11/10/serializing-dill-references.html
+
+    @staticmethod
+    def _mainify(obj):
+        if obj.__module__ != "__main__":
+            import __main__
+            import inspect
+            source = inspect.getsource(obj)
+            co = compile(source, '<string>', 'exec')
+            exec(co, __main__.__dict__)
+
+    @classmethod
+    def _dillable(cls):
+        import __main__
+        cls._mainify(self)
+        cls = getattr(__main__, cls.__name__)
+        return cls
+
+    # TODO: See above note on arglite
     def pairs(self, args: list = []):
         return [args[i*2:(i*2)+2] for i in range(len(args)-2)]
 
+    # TODO: See above note about above note on arglite
     def vars(self) -> None:
         for arg in self.actions:
             setattr(self, arg, self.actions[arg])
@@ -92,6 +117,8 @@ class RelicSpec(ItemSpec):
             "location": self.Slots.HANDS,
         }
 
+    # TODO: Determine if the below are really necessary.
+
     #def __validate_slot_value(self, slot: str = ""):
     #    slots = Slots._value2member_map_
     #    return slot in slots
@@ -101,9 +128,14 @@ class RelicSpec(ItemSpec):
     #    return side in sides
 
 class WeaponSpec(RelicSpec):
+
+    # Nothing special to see here...yet.
+
     pass
 
 class Factory:
+
+    # TODO: Finish springform, dammit.
 
     def __init__(self, name, path: str = "", item_type: any = ItemSpec, template: str = "", **kwargs):
         """ Creates items from templates """
