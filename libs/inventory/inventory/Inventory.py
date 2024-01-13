@@ -74,8 +74,8 @@ class Acquire:
                 instance = Instance(self.name)
                 try:
                     with open(f"{path}","wb") as fh:
-                        # TODO: Class not found
-                        dill.dump(instance.object, fh)
+                        # TODO: Class inheritance not found?
+                        dill.dump(instance.serial, fh)
                     #shutil.copy(self.filename, path)
                 except Exception as e:
                     # This operation attempts to move the file
@@ -399,7 +399,8 @@ class Items:
         console = Console()
         console.print(table)
 
-    def use(self, item: str):
+    @classmethod
+    def use(self, item: str = ""):
         """ Uses an item from the inventory """
         # Set up properties and potential kwargs
         box = False
@@ -408,27 +409,23 @@ class Items:
         # Verify that item is in path or inventory
         try:
             # TODO: Replace with Instantiator instance
-            with open(f"{Config.values['INV_PATH']}/{item}") as fh:
-                item_file = dill.load(fh)
+            path = os.path.expanduser(
+                f"{Config.values['INV_PATH']}/{item}"
+            )
+            with open(path, "rb") as fh:
+                instance = dill.load(fh)
             #item_file = importlib.import_module(f"{item}")
         except ModuleNotFoundError:
             print(f"You don't seem to have any {item}.")
             sys.exit()
 
-        # Reflect the class
-        try:
-            # TODO: Use Instantiator instance
-            instance = getattr(item_file, item)()
-        except:
-            print(f"{item} doesn't seem to be a valid object.")
-            sys.exit()
-
         # Test type of item; remove if ItemSpec
         try:
             record = registry.search(item)
-            box = self.is_box(item_file)
-            relic = self.is_relic(item_file)
-            fixture = self.is_fixture(item_file)
+            # TODO: Combine inherited traits as single search API?
+            #box = self.is_box(instance)
+            #relic = self.is_relic(instance)
+            #fixture = self.is_fixture(instance)
             # Only decrease quantity if item is consumable
             if instance.consumable:
                 registry.remove(item)
@@ -439,12 +436,11 @@ class Items:
             registry.remove(item = item)
             sys.exit()
         except IsFixture: pass
-
         # Return the result or inbuilt use method
         if type(instance).__str__ is not object.__str__:
-            instance.use(**instance.actions)
+            instance.use(instance, **instance.actions)
         else:
-            return instance.use(**instance.actions)
+            return instance.use(instance, **instance.actions)
 
 # Create instances to use as shorthand. I thought this was a bad idea,
 # but this is actually how the random module works:

@@ -6,8 +6,9 @@ class Instance:
         """ Instantiate object to access runnable properties """
         try:
             self.module = importlib.import_module(f"{item}")
-            self.object = getattr(self.module, item)()
-            self.serialized = self.module.dillable(self.object)
+            self.uninst = getattr(self.module, item)
+            self.object = self.uninst()
+            self.serial = self.uninst.dillable(self.uninst)
         except ModuleNotFoundError:
             print(f"It seems you don't have any {item}.")
             exit()

@@ -35,23 +35,29 @@ class ItemSpec:
         self.VOLUME = 1
         self.vars()
 
-    # Portable dill'ing brought to you by the kind folks at:
+    # The basis for this portable dill'ing brought to you by the kind folks at:
     # https://oegedijk.github.io/blog/pickle/dill/python/2020/11/10/serializing-dill-references.html
 
-    @staticmethod
-    def _mainify(obj):
-        if obj.__module__ != "__main__":
+    def mainify(self, props: dict = {}):
+        if self.__module__ != "__main__":
             import __main__
             import inspect
-            source = inspect.getsource(obj)
+            source = inspect.getsource(self)
+            # Inject inhertiable classes before source; they
+            # don't come over via inspect methods
+            # TODO: Limit to the actual inheritables?
+            source = f"from inventory.Item import *\n\n{source}"
             co = compile(source, '<string>', 'exec')
             exec(co, __main__.__dict__)
 
     @classmethod
-    def _dillable(cls):
+    def dillable(self, instance):
         import __main__
-        cls._mainify(self)
-        cls = getattr(__main__, cls.__name__)
+        instance.mainify(instance)
+        cls = getattr(__main__, self.__name__)
+        props = instance().__dict__
+        for prop in props:
+            setattr(cls, str(prop), props[prop])
         return cls
 
     # TODO: See above note on arglite
