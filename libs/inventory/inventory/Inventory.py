@@ -107,7 +107,6 @@ class Acquire:
         else:
             print(f"Couldn't acquire {self.quantity} {self.name}: Max Volume exceeded")
             sys.exit()
-
     # TODO: Add resistance for certain magical items or level needs?
 
 class Registry:
@@ -295,15 +294,18 @@ class Registry:
             SELECT name, filename, quantity, consumable, volume FROM items
         """)
 
+        path = os.path.expanduser(
+            f"{Config.values['INV_PATH']}"
+        )
+
         for name, filename, quantity, consumable, volume in cursor.fetchall():
             data = [str(name), str(quantity), str(bool(consumable)), str(volume)]
             with pennant.FEATURE_FLAG_CODE(WORLD == "venture"):
-                with open("{name}", "rb") as fh:
+                with open(f"{path}/{name}", "rb") as fh:
                     instance = dill.load(fh)
-                #instance = Instance(name)
                 data += [
-                    str(True if instance.get_property("slot") else False),
-                    str(instance.get_property("durability") or "-"),
+                    str(True if instance.slot else False),
+                    str(instance.durability or "-"),
                     str(Equipment.discover(cursor, name) or "-")                ]
             table.add_row(*data)
 
@@ -317,20 +319,19 @@ class Items:
         """ Constructor """
         self.inv = registry
 
-    def is_fixture(self, item) -> bool:
+    @staticmethod
+    def is_fixture(mro: list = []) -> bool:
         """ Returns fixture specification status """
         return "FixtureSpec" in dir(item)
 
-    def is_box(self, item) -> bool:
+    @staticmethod
+    def is_box(mro: list = []) -> bool:
         """ Returns box specification status """
         return "BoxSpec" in dir(item)
 
-    def is_relic(self, item) -> bool:
+    @staticmethod
+    def is_relic(mro: list = []) -> bool:
         return "RelicSpec" in dir(item)
-
-    def file_exists(self, item) -> bool:
-        """ Checks if item file exists in inventory """
-        return os.path.exists(f"{self.inv.path}/{item}.py")
 
     def trash(self, item: str, quantity: int = 1) -> None:
         """ Removes item from the list; tied to the "remove" .bashrc alias """
@@ -349,17 +350,17 @@ class Items:
             result = registry.search(item = item)
             if not result:
                 raise OutOfError(item)
-            # Convert the quantity to an integer if not already one
-            quantity = int(quantity)
-            # Test if the number being dropped is more than we have
-            # and limit the drops to only the quantity that we have
-            if quantity > result["quantity"]:
-                quantity = result["quantity"]
         except OutOfError:
             print(f"It doesn't look like you have any {item}.")
             sys.exit()
         except ValueError:
             quantity = 1
+        # Convert the quantity to an integer if not already one
+        quantity = int(quantity)
+        # Test if the number being dropped is more than we have
+        # and limit the drops to only the quantity that we have
+        if quantity > result["quantity"]:
+            quantity = result["quantity"]
         try:
             for _ in range(quantity):
                 Factory(item)
@@ -408,13 +409,11 @@ class Items:
 
         # Verify that item is in path or inventory
         try:
-            # TODO: Replace with Instantiator instance
             path = os.path.expanduser(
                 f"{Config.values['INV_PATH']}/{item}"
             )
             with open(path, "rb") as fh:
                 instance = dill.load(fh)
-            #item_file = importlib.import_module(f"{item}")
         except ModuleNotFoundError:
             print(f"You don't seem to have any {item}.")
             sys.exit()
@@ -422,10 +421,9 @@ class Items:
         # Test type of item; remove if ItemSpec
         try:
             record = registry.search(item)
-            # TODO: Combine inherited traits as single search API?
-            #box = self.is_box(instance)
-            #relic = self.is_relic(instance)
-            #fixture = self.is_fixture(instance)
+            # Retrieves superclasses from MRO; prevents
+            # incompatible use cases
+            mro = [cls.__name__ for cls in instance.__mro__]
             # Only decrease quantity if item is consumable
             if instance.consumable:
                 registry.remove(item)
