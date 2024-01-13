@@ -135,9 +135,9 @@ class RelicSpec(ItemSpec):
 
 class WeaponSpec(RelicSpec):
 
-    # Nothing special to see here...yet.
-
-    pass
+    def __init__(self, filename: str = ""):
+        super().__init__(filename)
+        self.unique = True
 
 class Factory:
 
