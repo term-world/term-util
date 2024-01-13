@@ -1,8 +1,13 @@
 import os
 import sys
 import enum
+import inspect
+import pennant
 import narrator
 import sqlite3
+
+from typing import Any
+from arglite import parser as cliarg
 
 from .Item import RelicSpec
 from .Instantiator import Instance
@@ -12,10 +17,11 @@ class Equipment:
     # TODO: There are a lot of duplicated methods testing
     #       types, et al. We need to remove/conslidate them.
 
-    def choose_equip_side(sides: list = []) -> str:
-        """ Deprecated, or at least out of current use (RETAIN) """
-        if type(sides) == str or len(sides) == 1:
-            return [sides][-1]
+    def choose_equip_side(sides) -> str:
+        if type(sides) == RelicSpec.Slots:
+            return sides.value
+        if type(sides) == list and len(sides) == 1:
+            return sides[-1].value
         q = narrator.Question({
             "question": "Equip to which side?\n",
             "responses": [
@@ -26,15 +32,24 @@ class Equipment:
 
     # TODO: Seems to belong in Validator, tho.
     @staticmethod
-    def verify_valid_slot(name: str = "", slot: str = "") -> bool:
+    def verify_valid_slot(name: str = "", slot: Any = "") -> bool:
+        # Jump the queue if unequipping!
+        if inspect.stack()[1].function == "unequip":
+            return True
         instance = Instance(name)
-        return instance.get_property("slot")["location"] in RelicSpec.Slots
+        slots = instance.get_property("slot")["location"]
+        if type(slots) == RelicSpec.Slots:
+            slots = [slots]
+        for slot in slots:
+            if slot not in RelicSpec.Slots: return False
+        return True
 
     @staticmethod
     def configure(conn: sqlite3.Connection) -> None:
+        """ Configure table on first-time run """
         cursor = conn.cursor()
-        # Create equipment table
 
+        # Create equipment table
         cursor.execute(
             """
                 CREATE TABLE IF NOT EXISTS equipment (
@@ -60,9 +75,12 @@ class Equipment:
                     (slot.value,)
                 )
             conn.commit()
+
         # Set trigger to validate slot assignment on update
         conn.create_function("verify_valid_slot", 2, Equipment.verify_valid_slot)
-        sqlite3.enable_callback_tracebacks(True)
+
+        with pennant.FEATURE_FLAG_CODE(cliarg.optional.debug):
+            sqlite3.enable_callback_tracebacks(True)
 
         cursor.execute(
             """
@@ -78,7 +96,6 @@ class Equipment:
         )
 
         # Set trigger to prevent additional slot creation
-        # TODO: Reenable when finished with table creation
         cursor.execute(
             """
                 CREATE TRIGGER IF NOT EXISTS inv_equipment_limit_slots
@@ -105,7 +122,9 @@ class Equipment:
     @staticmethod
     def equip(conn: sqlite3.Connection, name: str = "") -> bool:
         instance = Instance(name)
-        slot = instance.get_property("slot")["location"].value
+        slot = Equipment.choose_equip_side(
+            instance.get_property("slot")["location"]
+        )
         cursor = conn.cursor()
         try:
             cursor.execute(
@@ -121,6 +140,36 @@ class Equipment:
             print("Invalid slot for item!")
             sys.exit()
         return bool(cursor.rowcount)
+
+    @staticmethod
+    def unequip(conn: sqlite3.Connection, name: str = "") -> bool:
+        instance = Instance(name)
+        # TODO: Fix for multi-slot cases (iteratives).
+        slots = instance.get_property("slot")["location"]
+        if type(slots) == RelicSpec.Slots:
+            slots = [slots]
+        cursor = conn.cursor()
+        for slot in slots:
+            cursor.execute(
+                """
+                    UPDATE equipment
+                    SET name = ""
+                    WHERE name = ? AND slot = ?
+                """,
+                (name, slot.value, )
+            )
+            if cursor.rowcount == 1:
+                conn.commit()
+                break
+
+    @staticmethod
+    def show(cursor: sqlite3.Cursor):
+        cursor.execute(
+            """
+                SELECT slot, name FROM equipment;
+            """
+        )
+        return cursor.fetchall()
 
 class EquipError(Exception):
 

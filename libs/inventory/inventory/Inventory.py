@@ -6,6 +6,7 @@ import json
 import importlib
 import shutil
 import sqlite3
+import pennant
 
 from rich.table import Table
 from rich.console import Console
@@ -14,13 +15,7 @@ from rich.console import Console
 from .Config import *
 from .Equipment import *
 
-# TODO: Why not just import *?
-from .Item import ItemSpec
-from .Item import FixtureSpec
-from .Item import BoxSpec
-from .Item import OutOfError
-from .Item import IsFixture
-from .Item import Factory
+from .Item import *
 
 from .Validation import Validator
 from .Instantiator import Instance
@@ -61,11 +56,14 @@ class Acquire:
 
     def locate(self, filename: str = "") -> None:
         """ Locates item file in current working directory """
+        # TODO: Revise method to look in directory and prompt if there
+        #       are multiple similarly-named items.
         self.name, self.ext = self.filename.split("/")[-1].split(".")
         self.name = re.search(r"[a-zA-Z]+", self.name).group(0)
         self.box = Validator.is_box(self.name)
-        self.filename = f"{self.name}.{self.ext}"
+        self.filename = f"{self.name}" # Removed {self.ext}; do we need it?
 
+    # TODO: This is how we dill it </MontelJordan>
     def move(self):
         """ Move the file acquired to the inventory directory """
         try:
@@ -75,21 +73,21 @@ class Acquire:
             if not self.box:
                 instance = Instance(self.name)
                 try:
-                    shutil.copy(self.filename, path)
-                except:
+                    with open(f"{path}","wb") as fh:
+                        # TODO: Class inheritance not found?
+                        dill.dump(instance.serial, fh)
+                    #shutil.copy(self.filename, path)
+                except Exception as e:
                     # This operation attempts to move the file
                     # based on real file name; however, if this
                     # fails it might be OK
                     pass
-                #obj = importlib.import_module(self.name)
                 if "ItemSpec" in dir(instance) or "RelicSpec" in dir(instance):
                     # Remove only the physically present copy
                     os.remove(f"./{self.item}")
         except Exception as e:
             # TODO: Differentiate levels of inacquisition. For
-            #       example, change the message here to reflect
-            #       _why_ something couldn't Acquire; see add
-            #       method below as well.
+            #       example, use different exceptions defensively.
             print(f"Couldn't acquire {self.name}")
             sys.exit()
 
@@ -109,12 +107,10 @@ class Acquire:
         else:
             print(f"Couldn't acquire {self.quantity} {self.name}: Max Volume exceeded")
             sys.exit()
-
     # TODO: Add resistance for certain magical items or level needs?
 
 class Registry:
 
-    # File operations
     def __init__(self):
         """ Constructor """
         self.inventory = {}
@@ -129,7 +125,6 @@ class Registry:
             self.__convert_json_file()
             os.unlink(f"{self.path}/.registry")
 
-    # Create inventory SQL table
     def __create_inv_sql_table(self):
         """ Create tables for inventory and other needs based on WORLD_NAME """
         cursor = self.conn.cursor()
@@ -145,10 +140,9 @@ class Registry:
                 );
             """
         )
-        if WORLD == "venture":
+        with pennant.FEATURE_FLAG_CODE(WORLD == "venture"):
             Equipment.configure(conn = self.conn)
 
-    # Convert legacy JSON file (DEPRECATE WHEN PRACTICAL)
     def __convert_json_file(self):
         """ Convert JSON file from earlier versions of topia """
         with open(os.path.expanduser(
@@ -241,7 +235,6 @@ class Registry:
 
     def add(self, item: str, number: int = 1) -> None:
         """ API to add an item to the inventory DB """
-        # TODO: Doesn't add if there aren't any already?
         cursor = self.conn.cursor()
         cursor.execute(
             f"""
@@ -255,7 +248,7 @@ class Registry:
         if cursor.rowcount != 1:
             self.__add_table_entry(
                 name = item,
-                filename = f"{item}.py",
+                filename = f"{item}",
                 quantity = number
             )
         self.__remove_zero_quantity_items()
@@ -268,7 +261,7 @@ class Registry:
     def search(self, item: str = "") -> dict:
         """ API to search inventory database """
         # TODO: Expand to allow for multiple item search
-        #       using OR logic
+        #       using OR logic...er...nah.
         cursor = self.conn.cursor()
         cursor.execute(
             """
@@ -284,7 +277,6 @@ class Registry:
             }
         return {}
 
-    # Create a nice(r) display
     def display(self):
         """ Display contents of inventory to the terminal """
         table = Table(title=f"{os.getenv('LOGNAME')}'s inventory")
@@ -292,25 +284,28 @@ class Registry:
         table.add_column("Item count")
         table.add_column("Consumable")
         table.add_column("Volume")
-        if WORLD == "venture":
+        with pennant.FEATURE_FLAG_CODE(WORLD == "venture"):
             table.add_column("Equippable")
             table.add_column("Durability")
             table.add_column("Equipped")
 
-        # TODO: Move query to its own method?
         cursor = self.conn.cursor()
         cursor.execute("""
             SELECT name, filename, quantity, consumable, volume FROM items
         """)
 
+        path = os.path.expanduser(
+            f"{Config.values['INV_PATH']}"
+        )
+
         for name, filename, quantity, consumable, volume in cursor.fetchall():
-            # Feature-flag the rows; columns already are
             data = [str(name), str(quantity), str(bool(consumable)), str(volume)]
-            if WORLD == "venture":
-                instance = Instance(name)
+            with pennant.FEATURE_FLAG_CODE(WORLD == "venture"):
+                with open(f"{path}/{name}", "rb") as fh:
+                    instance = dill.load(fh)
                 data += [
-                    str(True if instance.get_property("slot") else False),
-                    str(instance.get_property("durability") or "-"),
+                    str(True if instance.slot else False),
+                    str(instance.durability or "-"),
                     str(Equipment.discover(cursor, name) or "-")                ]
             table.add_row(*data)
 
@@ -324,20 +319,19 @@ class Items:
         """ Constructor """
         self.inv = registry
 
-    def is_fixture(self, item) -> bool:
+    @staticmethod
+    def is_fixture(mro: list = []) -> bool:
         """ Returns fixture specification status """
         return "FixtureSpec" in dir(item)
 
-    def is_box(self, item) -> bool:
+    @staticmethod
+    def is_box(mro: list = []) -> bool:
         """ Returns box specification status """
         return "BoxSpec" in dir(item)
 
-    def is_relic(self, item) -> bool:
+    @staticmethod
+    def is_relic(mro: list = []) -> bool:
         return "RelicSpec" in dir(item)
-
-    def file_exists(self, item) -> bool:
-        """ Checks if item file exists in inventory """
-        return os.path.exists(f"{self.inv.path}/{item}.py")
 
     def trash(self, item: str, quantity: int = 1) -> None:
         """ Removes item from the list; tied to the "remove" .bashrc alias """
@@ -356,17 +350,17 @@ class Items:
             result = registry.search(item = item)
             if not result:
                 raise OutOfError(item)
-            # Convert the quantity to an integer if not already one
-            quantity = int(quantity)
-            # Test if the number being dropped is more than we have
-            # and limit the drops to only the quantity that we have
-            if quantity > result["quantity"]:
-                quantity = result["quantity"]
         except OutOfError:
             print(f"It doesn't look like you have any {item}.")
             sys.exit()
         except ValueError:
             quantity = 1
+        # Convert the quantity to an integer if not already one
+        quantity = int(quantity)
+        # Test if the number being dropped is more than we have
+        # and limit the drops to only the quantity that we have
+        if quantity > result["quantity"]:
+            quantity = result["quantity"]
         try:
             for _ in range(quantity):
                 Factory(item)
@@ -374,17 +368,40 @@ class Items:
         except:
             pass
 
+    @pennant.FEATURE_FLAG_FUNCTION(WORLD == "venture")
     def equip(self, item: str):
         try:
             result = registry.search(item = item)
             if not result:
-                raise OutOfError
+                raise OutOfError(item)
             Equipment.equip(registry.conn, item)
         except OutOfError:
             print(f"It doesn't look like you have any {item}.")
-            exit()
+            sys.exit()
 
-    def use(self, item: str):
+    @pennant.FEATURE_FLAG_FUNCTION(WORLD == "venture")
+    def unequip(self, item: str):
+        try:
+            result = registry.search(item = item)
+            if not result:
+                raise OutOfError(item)
+            Equipment.unequip(registry.conn, item)
+        except OutOfError:
+            print(f"It doesn't look like you have any {item}.")
+            sys.exit()
+
+    @pennant.FEATURE_FLAG_FUNCTION(WORLD == "venture")
+    def equipped(self):
+        table = Table(title=f"{os.getenv('LOGNAME')}'s equipment")
+        table.add_column("Slot")
+        table.add_column("Item")
+        for slot, value in Equipment.show(registry.conn.cursor()):
+            table.add_row(slot, value)
+        console = Console()
+        console.print(table)
+
+    @classmethod
+    def use(self, item: str = ""):
         """ Uses an item from the inventory """
         # Set up properties and potential kwargs
         box = False
@@ -392,26 +409,21 @@ class Items:
 
         # Verify that item is in path or inventory
         try:
-            # TODO: Replace with Instantiator instance
-            item_file = importlib.import_module(f"{item}")
+            path = os.path.expanduser(
+                f"{Config.values['INV_PATH']}/{item}"
+            )
+            with open(path, "rb") as fh:
+                instance = dill.load(fh)
         except ModuleNotFoundError:
             print(f"You don't seem to have any {item}.")
-            sys.exit()
-
-        # Reflect the class
-        try:
-            # TODO: Use Instantiator instance
-            instance = getattr(item_file, item)()
-        except:
-            print(f"{item} doesn't seem to be a valid object.")
             sys.exit()
 
         # Test type of item; remove if ItemSpec
         try:
             record = registry.search(item)
-            box = self.is_box(item_file)
-            relic = self.is_relic(item_file)
-            fixture = self.is_fixture(item_file)
+            # Retrieves superclasses from MRO; prevents
+            # incompatible use cases
+            mro = [cls.__name__ for cls in instance.__mro__]
             # Only decrease quantity if item is consumable
             if instance.consumable:
                 registry.remove(item)
@@ -422,12 +434,11 @@ class Items:
             registry.remove(item = item)
             sys.exit()
         except IsFixture: pass
-
         # Return the result or inbuilt use method
         if type(instance).__str__ is not object.__str__:
-            instance.use(**instance.actions)
+            instance.use(instance, **instance.actions)
         else:
-            return instance.use(**instance.actions)
+            return instance.use(instance, **instance.actions)
 
 # Create instances to use as shorthand. I thought this was a bad idea,
 # but this is actually how the random module works:

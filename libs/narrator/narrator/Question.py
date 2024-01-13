@@ -14,7 +14,7 @@ class Question:
     return False
 
   def set_opt(self, option: dict) -> dict:
-    choice = option["choice"]
+    choice = option["choice"].lower()
     for letter in choice:
       if not self.is_key(letter):
         opt = Option(letter, option)

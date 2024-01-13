@@ -2,3 +2,4 @@ gitit
 python-dotenv
 rich
 dill
+pennant
