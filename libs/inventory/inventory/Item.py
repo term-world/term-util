@@ -18,22 +18,53 @@ sys.path.append(
 class ItemSpec:
 
     def __init__(self, filename: str = ""):
+        """ Constructor """
         self.file = filename
         self.actions = {}
+        # TODO: Refactor to use arglite; this is the
+        #       snippet it came from, after all
         arg_pairs = self.pairs(sys.argv)
         for arg, val in arg_pairs:
             if re.match(r"^-{1,2}", arg):
                 arg = arg.replace("-","")
                 self.actions[arg] = val
+        # Constant properties
         self.consumable = True
         self.equippable = False
         self.unique = False
         self.VOLUME = 1
         self.vars()
 
+    # The basis for this portable dill'ing brought to you by the kind folks at:
+    # https://oegedijk.github.io/blog/pickle/dill/python/2020/11/10/serializing-dill-references.html
+
+    def mainify(self, props: dict = {}):
+        if self.__module__ != "__main__":
+            import __main__
+            import inspect
+            source = inspect.getsource(self)
+            # Inject inhertiable classes before source; they
+            # don't come over via inspect methods
+            # TODO: Limit to the actual inheritables?
+            source = f"from inventory.Item import *\n\n{source}"
+            co = compile(source, '<string>', 'exec')
+            exec(co, __main__.__dict__)
+
+    @classmethod
+    def dillable(self, instance):
+        import __main__
+        instance.mainify(instance)
+        cls = getattr(__main__, self.__name__)
+        props = instance().__dict__
+        for prop in props:
+            setattr(cls, str(prop), props[prop])
+        return cls
+
+    # TODO: See above note on arglite
     def pairs(self, args: list = []):
         return [args[i*2:(i*2)+2] for i in range(len(args)-2)]
 
+    # TODO: See above note about above note on arglite
     def vars(self) -> None:
         for arg in self.actions:
             setattr(self, arg, self.actions[arg])
@@ -75,6 +106,8 @@ class RelicSpec(ItemSpec):
         BELT = "BELT"
         LEGS = "LEGS"
         FEET = "FEET"
+        WEAPON_LEFT = "LEFT WEAPON"
+        WEAPON_RIGHT = "RIGHT WEAPON"
 
     class Sides(enum.Enum):
         RIGHT = "right"
@@ -90,6 +123,8 @@ class RelicSpec(ItemSpec):
             "location": self.Slots.HANDS,
         }
 
+    # TODO: Determine if the below are really necessary.
+
     #def __validate_slot_value(self, slot: str = ""):
     #    slots = Slots._value2member_map_
     #    return slot in slots
@@ -98,7 +133,15 @@ class RelicSpec(ItemSpec):
     #    sides = Sides._value2member_map_
     #    return side in sides
 
+class WeaponSpec(RelicSpec):
+
+    def __init__(self, filename: str = ""):
+        super().__init__(filename)
+        self.unique = True
+
 class Factory:
+
+    # TODO: Finish springform, dammit.
 
     def __init__(self, name, path: str = "", item_type: any = ItemSpec, template: str = "", **kwargs):
         """ Creates items from templates """

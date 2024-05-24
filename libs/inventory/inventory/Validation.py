@@ -1,4 +1,5 @@
 import re
+import dill
 import importlib
 
 from .Item import BoxSpec
